@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+.cloze-input {
+    border: none;
+    border-bottom: 2px solid #3b82f6;
+    outline: none;
+    margin: 0 4px;
+    padding: 0 4px;
+    font-family: inherit;
+    font-size: inherit;
+    background-color: #f0f9ff;
+  }
+  
+  .cloze-passage {
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
