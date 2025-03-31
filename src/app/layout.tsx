@@ -1,5 +1,5 @@
 import React from 'react';
-
+import './globals.css';
 export default function RootLayout({
   children,
 }: {
@@ -28,7 +28,7 @@ export default function RootLayout({
         
         <footer className="bg-gray-100 p-6 mt-10">
           <div className="max-w-7xl mx-auto text-center text-gray-500 text-sm">
-            <p>© {new Date().getFullYear()} iTELL Research Lab</p>
+          
             <p className="mt-1">This is a research study to evaluate different methods for gap generation in cloze tests.</p>
           </div>
         </footer>

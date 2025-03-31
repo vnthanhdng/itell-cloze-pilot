@@ -6,18 +6,13 @@ import fs from 'fs/promises';
 
 const execAsync = promisify(exec);
 
-type RouteParams = {
-    params: {
-      methodId: string;
-    };
-  };
 
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: Promise<{ methodId: string }> }
 ) {
   try {
-    const methodId = params.methodId;
+    const methodId = (await params).methodId;
     const searchParams = new URL(request.url).searchParams;
     const passageId = searchParams.get('passageId');
     const numGaps = searchParams.get('numGaps') || '10';
