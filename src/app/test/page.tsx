@@ -168,7 +168,7 @@ export default function DashboardPage() {
     // Test results CSV
     let testCsv = 'TestID,UserID,MethodID,PassageID,Score,TimeSpent,Timestamp\n';
     testResults.forEach(result => {
-      testCsv += `${result.testId},${result.userId},${result.methodId},${result.passageId},${result.score},${result.timeSpent},${result.timestamp}\n`;
+      testCsv += `${result.testId},${result.userId},${result.methodId},${result.passageId},${result.score},${result.timeSpent},${result.timeStamp}\n`;
     });
     
     // Survey responses CSV

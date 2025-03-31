@@ -48,7 +48,11 @@ const DraggableMethod: React.FC<DraggableMethodProps> = ({ methodId, index, move
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={(node) => {
+        if (node) {
+          drag(drop(node));
+        }
+      }}
       className={`p-3 mb-2 bg-white border rounded-md shadow-sm ${
         isDragging ? 'opacity-50' : 'opacity-100'
       }`}

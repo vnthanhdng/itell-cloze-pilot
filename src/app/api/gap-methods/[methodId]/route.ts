@@ -6,9 +6,15 @@ import fs from 'fs/promises';
 
 const execAsync = promisify(exec);
 
+type RouteParams = {
+    params: {
+      methodId: string;
+    };
+  };
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { methodId: string } }
+  { params }: RouteParams
 ) {
   try {
     const methodId = params.methodId;

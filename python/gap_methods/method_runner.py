@@ -1,6 +1,7 @@
 import sys
 import json
 import importlib
+import os
 
 def main():
     """
@@ -31,6 +32,10 @@ def main():
                     if k not in ['passage_text', 'num_gaps']}
     
     try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.append(current_dir)
+            
         # Import the method module
         method_module = importlib.import_module(f"method_{method_id}")
         
