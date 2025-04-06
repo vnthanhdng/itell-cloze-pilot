@@ -1,31 +1,51 @@
-import { MethodId } from '../utils/types';
 import { db } from './firebase';
 import { collection, getDocs, query } from 'firebase/firestore';
 
-const METHOD_ORDERS = [
-  [MethodId.A, MethodId.B, MethodId.C, MethodId.D],
-  [MethodId.B, MethodId.C, MethodId.D, MethodId.A],
-  [MethodId.C, MethodId.D, MethodId.A, MethodId.B],
-  [MethodId.D, MethodId.A, MethodId.B, MethodId.C],
+const METHODS = [
+  'contextuality',
+  'contextuality_plus',
+  'keyword'
 ];
 
+const TOTAL_PASSAGES = 16;
 /**
  * Determines the method order for a new participant
  * based on the counterbalancing principle
  */
-export const assignMethodOrder = async (): Promise<MethodId[]> => {
+
+export const assignUserTests = async (): Promise<{
+  passages: number[];
+  methods: string[];
+}> => {
   try {
-    // Get all existing users
-    const usersSnapshot = await getDocs(query(collection(db, 'users')));
-    const userCount = usersSnapshot.size;
+  const usersSnapshot = await getDocs(query(collection(db, 'users')));
+  const userCount = usersSnapshot.size;
+
+  const firstPassageIndex = userCount % TOTAL_PASSAGES;
+  const secondPassageIndex = (firstPassageIndex + Math.floor(TOTAL_PASSAGES/3)) % TOTAL_PASSAGES;
+  const thirdPassageIndex = (secondPassageIndex + Math.floor(TOTAL_PASSAGES/3)) % TOTAL_PASSAGES;
+
+  const passages = [
+    firstPassageIndex + 1,
+    secondPassageIndex + 1,
+    thirdPassageIndex + 1
+  ];
+
+  const methodRotation = userCount % 3;
+    const methods = [
+      METHODS[(0 + methodRotation) % 3],
+      METHODS[(1 + methodRotation) % 3],
+      METHODS[(2 + methodRotation) % 3]
+    ];
     
-    // Simple counterbalancing: assign based on modulo
-    const orderIndex = userCount % METHOD_ORDERS.length;
-    return METHOD_ORDERS[orderIndex];
+    return { passages, methods };
   } catch (error) {
-    console.error('Error assigning method order:', error);
-    // Default to the first order if there's an error
-    return METHOD_ORDERS[0];
+    console.error('Error assigning passages and methods:', error);
+    // Default to a simple assignment if there's an error
+    return { 
+      passages: [1, 6, 11], 
+      methods: ['contextuality', 'contextuality_plus', 'keyword'] 
+    };
   }
 };
 
@@ -33,27 +53,25 @@ export const assignMethodOrder = async (): Promise<MethodId[]> => {
  * Determines the next test in the sequence for a user
  */
 export const getNextTest = (
-  methodOrder: MethodId[], 
+  assignedPassages: number[],
+  assignedMethods: string[],
   currentProgress: number
-): { methodId: MethodId | null, passageId: number | null } => {
-  
+): { passageId: number | null, method: string | null } => {
   // If the user has completed all tests
-  if (currentProgress >= methodOrder.length) {
-    return { methodId: null, passageId: null };
+  if (currentProgress >= assignedPassages.length) {
+    return { passageId: null, method: null };
   }
   
-  // Get the next method ID from the order
-  const methodId = methodOrder[currentProgress];
+  // Get the next passage and method from the assignments
+  const passageId = assignedPassages[currentProgress];
+  const method = assignedMethods[currentProgress];
   
-  // For simplicity, passage ID corresponds to the test number (1-indexed)
-  const passageId = currentProgress + 1;
-  
-  return { methodId, passageId };
+  return { passageId, method };
 };
 
 /**
  * Checks if a user has completed all tests
  */
 export const hasCompletedAllTests = (progress: number): boolean => {
-  return progress >= METHOD_ORDERS[0].length;
+  return progress >= 3;
 };

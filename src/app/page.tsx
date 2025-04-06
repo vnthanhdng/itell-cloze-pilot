@@ -32,7 +32,7 @@ export default function HomePage() {
             router.push('/complete');
           } else if (progress.currentTest) {
             // Redirect to current test
-            router.push(`/test/${progress.currentTest.methodId}/${progress.currentTest.passageId}`);
+            router.push(`/test/${progress.currentTest.method}/${progress.currentTest.passageId}`);
           }
         } catch (err) {
           console.error('Error checking user progress:', err);

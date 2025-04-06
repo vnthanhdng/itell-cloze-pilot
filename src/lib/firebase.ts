@@ -30,7 +30,7 @@ import {
   Timestamp,
   serverTimestamp,
 } from "firebase/firestore";
-import { User, TestResult, SurveyResponse, FinalSurvey } from "../utils/types";
+import { User, TestResult, FinalSurvey } from "../utils/types";
 
 // User functions
 export const createUser = async (uid: string, userData: Partial<User>) => {
@@ -69,16 +69,6 @@ export const getTestResults = async (userId: string) => {
   })) as TestResult[];
 };
 
-// Survey functions
-export const saveSurveyResponse = async (
-  survey: Omit<SurveyResponse, "responseId" | "timestamp">
-) => {
-  const docRef = await addDoc(collection(db, "surveyResponses"), {
-    ...survey,
-    timestamp: serverTimestamp(),
-  });
-  return docRef.id;
-};
 
 // Final survey functions
 export const saveFinalSurvey = async (

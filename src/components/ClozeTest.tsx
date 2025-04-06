@@ -1,39 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GapItem, MethodId } from '../utils/types';
+import { GapItem } from '../utils/types';
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
-import { Errorbox } from ".//ui/callout";
+import { Errorbox } from "./ui/callout";
 import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
-import { ReadingContainer } from './ui/reading-container';
+import AnnotationComponent from './Annotation';
 
 interface ClozeTestProps {
   passage: string;
-  methodId: string | MethodId;
+  method: string;
   passageId: number;
-  user: any; // Replace with your user type
   onComplete: (results: {
     score: number;
     timeSpent: number;
     answers: Record<string, string>;
+    annotations: Record<string, string>;
   }) => void;
 }
 
 export default function ClozeTest({ 
   passage, 
-  methodId, 
+  method, 
   passageId,
-  user,
   onComplete 
 }: ClozeTestProps) {
   const [gaps, setGaps] = useState<GapItem[]>([]);
   const [clozeText, setClozeText] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [annotations, setAnnotations] = useState<Record<string, string>>({});
+  const [annotationsComplete, setAnnotationsComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [uiState, setUiState] = useState<
-    "initial" | "showingAnswers" | "showingContinue"
+    "initial" | "showingAnswers" | "showingAnnotations" | "showingContinue"
   >("initial");
   const [results, setResults] = useState<{
     answers: Array<{ word: string; isCorrect: boolean }>;
@@ -47,7 +48,7 @@ export default function ClozeTest({
   useEffect(() => {
     const loadGaps = async () => {
       try {
-        const response = await fetch(`/api/gap-methods/${methodId}?passageId=${passageId}`);
+        const response = await fetch(`/api/gap-methods/${method}?passageId=${passageId}`);
         const data = await response.json();
         
         if (data.error) {
@@ -74,7 +75,7 @@ export default function ClozeTest({
     };
     
     loadGaps();
-  }, [methodId, passageId]);
+  }, [method, passageId]);
 
   // Visual feedback effect 
   useEffect(() => {
@@ -189,11 +190,15 @@ export default function ClozeTest({
     );
   };
 
+  const handleAnnotationChange = (newAnnotations: Record<string, string>) => {
+    setAnnotations(newAnnotations);
+  };
+
   // Handle final submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (uiState === "showingContinue") {
+    if (uiState === "showingAnnotations" && annotationsComplete) {
       const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
       
       // Convert answers to the format expected by onComplete
@@ -205,8 +210,11 @@ export default function ClozeTest({
       onComplete({
         score: results?.score || 0,
         timeSpent,
-        answers: answerMap
+        answers: answerMap,
+        annotations
       });
+    } else if (!annotationsComplete) {
+      toast.error("Please complete all annotations before continuing.");
     }
   };
 
@@ -269,6 +277,16 @@ export default function ClozeTest({
           {/* Render your passage with gaps using the WordItem component */}
           {renderPassageWithGaps()}
         </div>
+
+        {uiState === "showingAnnotations" && (
+          <AnnotationComponent 
+            gaps={gaps} 
+            value={annotations}
+            onChange={handleAnnotationChange}
+            isComplete={annotationsComplete}
+            setIsComplete={setAnnotationsComplete}
+          />
+        )}
         
         <div className="flex gap-4">
           {uiState === "initial" ? (
@@ -297,6 +315,11 @@ export default function ClozeTest({
             <p className="text-blue-700">
               You scored {results.score.toFixed(1)}%. {results.score >= 70 ? 'Great job!' : 'Keep practicing!'}
             </p>
+            {uiState === "showingAnnotations" && !annotationsComplete && (
+              <p className="text-blue-700 mt-2">
+                Please complete the annotations for all gaps below before continuing.
+              </p>
+            )}
           </div>
         )}
       </form>

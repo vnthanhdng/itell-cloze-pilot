@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { createUser } from '../lib/firebase';
-import { assignMethodOrder } from '../lib/counterbalance';
+import { assignUserTests } from '../lib/counterbalance';
 import { Demographics } from '../utils/types';
 
 interface RegistrationProps {
@@ -46,14 +46,15 @@ export default function Registration({ onComplete }: RegistrationProps) {
       const user = userCredential.user;
 
       // Assign method order via counterbalancing
-      const methodOrder = await assignMethodOrder();
+     const {passages, methods} = await assignUserTests();
 
       // Create the user document in Firestore
       await createUser(user.uid, {
         uid: user.uid,
         email: user.email || '',
         demographics,
-        methodOrder,
+        assignedPassages: passages,
+        assignedMethods: methods,
         progress: 0,
         startTime: new Date()
       });

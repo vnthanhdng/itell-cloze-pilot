@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
-import { saveTestResult, saveSurveyResponse } from '../../../../lib/firebase';
+import { saveTestResult } from '../../../../lib/firebase';
 import { advanceUserProgress } from '../../../../lib/userProgress';
 import ReadingPassage from '../../../../components/ReadingPassage';
 import ClozeTest from '../../../../components/ClozeTest';
@@ -15,14 +15,13 @@ enum TestStage {
   LOADING,
   READING,
   TESTING,
-  SURVEY,
   COMPLETE
 }
 
 export default function TestPage() {
   const router = useRouter();
   const params = useParams();
-  const methodId = params?.methodId as string;
+  const method = params?.method as string;
   const passageId = parseInt(params?.passageId as string);
   
   const [userId, setUserId] = useState<string | null>(null);
@@ -69,6 +68,7 @@ export default function TestPage() {
     score: number;
     timeSpent: number;
     answers: Record<string, string>;
+    annotations: Record<string, string>;
   }) => {
     if (!userId) return;
 
@@ -76,15 +76,24 @@ export default function TestPage() {
       // Save test results
       const newTestId = await saveTestResult({
         userId,
-        methodId,
+        method,
         passageId,
         score: results.score,
         timeSpent: results.timeSpent,
-        answers: results.answers
+        answers: results.answers,
+        annotations: results.annotations
       });
 
       setTestId(newTestId);
-      setStage(TestStage.SURVEY);
+      const progress = await advanceUserProgress(userId);
+      setStage(TestStage.COMPLETE);
+      if (progress.complete) {
+        // All tests done, go to final survey
+        router.push('/complete');
+      } else if (progress.nextTest) {
+        // Go to the next test
+        router.push(`/test/${progress.nextTest.method}/${progress.nextTest.passageId}`);
+      }
     } catch (err) {
       console.error('Error saving test results:', err);
       setError('Failed to save your test results. Please try again.');
@@ -92,42 +101,7 @@ export default function TestPage() {
   };
 
   // Handle survey completion
-  const handleSurveyComplete = async (responses: {
-    difficulty: number;
-    engagement: number;
-    helpfulness: number;
-    likelihood: number;
-    comments?: string;
-  }) => {
-    if (!userId || !testId) return;
 
-    try {
-      // Save survey responses
-      await saveSurveyResponse({
-        userId,
-        testId,
-        methodId,
-        responses
-      });
-
-      // Advance user progress
-      const progress = await advanceUserProgress(userId);
-
-      // Move to the next test or complete
-      setStage(TestStage.COMPLETE);
-
-      if (progress.complete) {
-        // All tests done, go to final survey
-        router.push('/complete');
-      } else if (progress.nextTest) {
-        // Go to the next test
-        router.push(`/test/${progress.nextTest.methodId}/${progress.nextTest.passageId}`);
-      }
-    } catch (err) {
-      console.error('Error completing survey:', err);
-      setError('Failed to save your feedback. Please try again.');
-    }
-  };
 
   // Render different stages
   const renderStage = () => {
@@ -147,20 +121,13 @@ export default function TestPage() {
         return (
           <ClozeTest 
             passage={passage} 
-            methodId={methodId} 
+            method={method} 
             passageId={passageId} 
             onComplete={handleTestComplete} 
           />
         );
         
-      case TestStage.SURVEY:
-        return (
-          <PostTestSurvey 
-            methodId={methodId} 
-            testId={testId} 
-            onComplete={handleSurveyComplete} 
-          />
-        );
+
         
       case TestStage.COMPLETE:
         return <div className="flex justify-center py-8">Proceeding to next test...</div>;
@@ -191,15 +158,12 @@ export default function TestPage() {
     <div>
       <header className="bg-gray-100 p-4 mb-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-xl font-bold">Test {passageId} - Method {methodId}</h1>
+          <h1 className="text-xl font-bold">Test {passageId}</h1>
           {stage === TestStage.READING && (
             <p className="text-gray-600">Please read the passage carefully.</p>
           )}
           {stage === TestStage.TESTING && (
-            <p className="text-gray-600">Fill in the blanks in the passage.</p>
-          )}
-          {stage === TestStage.SURVEY && (
-            <p className="text-gray-600">Please share your feedback about this test.</p>
+            <p className="text-gray-600">Fill in the blanks and annotate each gap.</p>
           )}
         </div>
       </header>

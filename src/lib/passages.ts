@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { MethodId } from '../utils/types';
+
 
 export interface GapData {
   word: string;
@@ -46,15 +46,3 @@ export function loadPassage(passageId: string): PassageData | null {
   }
 }
 
-export function getMethodField(methodId: MethodId): 'contextuality' | 'contextuality_plus' | 'keyword' {
-  switch (methodId) {
-    case MethodId.A:
-      return 'contextuality';
-    case MethodId.B:
-      return 'contextuality_plus';
-    case MethodId.C:
-      return 'keyword';
-    default:
-      return 'contextuality';
-  }
-}

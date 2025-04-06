@@ -1,6 +1,6 @@
 import { updateUser, getUser } from './firebase';
 import { getNextTest, hasCompletedAllTests } from './counterbalance';
-import { User, MethodId } from '../utils/types';
+import { User } from '../utils/types';
 
 /**
  * Advances the user's progress to the next test
@@ -28,13 +28,17 @@ export const advanceUserProgress = async (uid: string) => {
     }
     
     // Get the next test information
-    const { methodId, passageId } = getNextTest(user.methodOrder as MethodId[], newProgress);
+    const { passageId, method } = getNextTest(
+      user.assignedPassages, 
+      user.assignedMethods, 
+      newProgress
+    );
     
     return {
       complete: false,
       nextTest: {
-        methodId,
-        passageId
+        passageId,
+        method
       }
     };
   } catch (error) {
@@ -61,13 +65,17 @@ export const getCurrentTest = async (uid: string) => {
     }
     
     // Get the current test information
-    const { methodId, passageId } = getNextTest(user.methodOrder as MethodId[], user.progress);
+    const { passageId, method } = getNextTest(
+      user.assignedPassages,
+      user.assignedMethods,
+      user.progress
+    );
     
     return {
       complete: false,
       currentTest: {
-        methodId,
-        passageId
+        passageId,
+        method
       }
     };
   } catch (error) {

@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs/promises';
-import { MethodId } from '../../../../utils/types';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ methodId: string }> }
+  { params }: { params: Promise<{method: string }> }
 ) {
   try {
-    const methodId = (await params).methodId;
+    const method = (await params).method;
     const searchParams = new URL(request.url).searchParams;
     const passageId = searchParams.get('passageId');
     
-    if (!methodId || !passageId) {
+    if (!method || !passageId) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
@@ -46,22 +45,9 @@ export async function GET(
     
     const passage = JSON.parse(lines[passageIndex]);
     
-    // Determine which test type to use based on methodId
-    let testType;
-    switch (methodId.toUpperCase()) {
-      case MethodId.A:
-        testType = 'contextuality';
-        break;
-      case MethodId.B:
-        testType = 'contextuality_plus';
-        break;
-      case MethodId.C:
-      case MethodId.D:
-        testType = 'keyword';
-        break;
-      default:
-        testType = 'contextuality';
-    }
+    // Use the method name directly as the test type
+    // Valid method values should be 'contextuality', 'contextuality_plus', or 'keyword'
+    const testType = method.toLowerCase();
     
     // Get the cloze test data
     if (!passage[testType]) {
