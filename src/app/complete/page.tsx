@@ -6,7 +6,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { getUser, getTestResults, saveFinalSurvey } from '../../lib/firebase';
 import FinalSurvey from '../../components/FinalSurvey';
-import { MethodId } from '../../utils/types';
 
 export default function CompletePage() {
   const router = useRouter();

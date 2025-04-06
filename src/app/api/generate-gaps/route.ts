@@ -8,10 +8,10 @@ const execAsync = promisify(exec);
 
 export async function POST(request: NextRequest) {
   try {
-    const { methodId, passageId, numGaps = 10, params = {} } = await request.json();
+    const { method, passageId, numGaps = 10, params = {} } = await request.json();
     
     // Validate inputs
-    if (!methodId || !passageId) {
+    if (!method || !passageId) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Call the Python script
     const scriptPath = path.join(process.cwd(), 'python', 'gap_methods', 'method_runner.py');
     const { stdout, stderr } = await execAsync(
-      `python ${scriptPath} ${methodId.toLowerCase()} ${tmpInputPath} ${tmpOutputPath}`
+      `python ${scriptPath} ${method.toLowerCase()} ${tmpInputPath} ${tmpOutputPath}`
     );
     
     if (stderr) {

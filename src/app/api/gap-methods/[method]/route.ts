@@ -9,7 +9,7 @@ export async function GET(
   try {
     const method = (await params).method;
     const searchParams = new URL(request.url).searchParams;
-    const passageId = searchParams.get('passageId');
+    const passageId = parseInt(searchParams.get('passageId') || '0');
     
     if (!method || !passageId) {
       return NextResponse.json(
@@ -34,7 +34,7 @@ export async function GET(
     
     // Parse the JSONL file and find the requested passage
     const lines = jsonlData.split('\n').filter(line => line.trim());
-    const passageIndex = parseInt(passageId) - 1;
+    const passageIndex = passageId - 1;
     
     if (passageIndex < 0 || passageIndex >= lines.length) {
       return NextResponse.json(

@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { TestResult, SurveyResponse, FinalSurvey, MethodId } from '../../utils/types';
+import { TestResult, FinalSurvey } from '../../utils/types';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
+
   const [finalSurveys, setFinalSurveys] = useState<FinalSurvey[]>([]);
   const [error, setError] = useState<string | null>(null);
 

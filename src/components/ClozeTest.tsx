@@ -7,6 +7,7 @@ import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
 import AnnotationComponent from './Annotation';
+import { getMethodApiName } from '../utils/methodMapping'; 
 
 interface ClozeTestProps {
   passage: string;
@@ -48,7 +49,9 @@ export default function ClozeTest({
   useEffect(() => {
     const loadGaps = async () => {
       try {
-        const response = await fetch(`/api/gap-methods/${method}?passageId=${passageId}`);
+        const apiMethod = getMethodApiName(method); 
+        console.log(apiMethod);
+        const response = await fetch(`/api/gap-methods/${apiMethod}?passageId=${passageId}`);
         const data = await response.json();
         
         if (data.error) {

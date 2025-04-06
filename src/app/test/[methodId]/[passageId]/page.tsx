@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
 import { saveTestResult } from '../../../../lib/firebase';
 import { advanceUserProgress } from '../../../../lib/userProgress';
 import ReadingPassage from '../../../../components/ReadingPassage';
 import ClozeTest from '../../../../components/ClozeTest';
-import PostTestSurvey from '../../../../components/PostTestSurvey';
 import { GapItem } from '../../../../utils/types';
 
 enum TestStage {
@@ -18,11 +17,24 @@ enum TestStage {
   COMPLETE
 }
 
-export default function TestPage() {
+// This function runs on the client side
+export default function TestPage({
+  params
+}: {
+  params: { method: string; passageId: string }
+}) {
   const router = useRouter();
-  const params = useParams();
-  const method = params?.method as string;
-  const passageId = parseInt(params?.passageId as string);
+  
+  // Extract method and passageId from the route params object directly
+  const unwrapped = use(params);
+  const { methodId } = unwrapped;
+  const method = methodId;
+  const passageIdNumber = parseInt(unwrapped.passageId, 10);
+  
+  // Log params for debugging (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('TestPage params:', { unwrapped, method, passageIdNumber });
+  }
   
   const [userId, setUserId] = useState<string | null>(null);
   const [stage, setStage] = useState<TestStage>(TestStage.LOADING);
@@ -48,13 +60,17 @@ export default function TestPage() {
   // Load the passage content
   const loadPassage = async () => {
     try {
-      const response = await fetch(`/passages/passage${passageId}.md`);
+      const response = await fetch(`/passages/passage${passageIdNumber}.md`);
+      if (!response.ok) {
+        throw new Error(`Failed to load passage ${passageIdNumber}: ${response.statusText}`);
+      }
+      
       const text = await response.text();
       setPassage(text);
       setStage(TestStage.READING);
     } catch (err) {
       console.error('Error loading passage:', err);
-      setError('Failed to load reading passage. Please try again.');
+      setError(`Failed to load reading passage: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -77,7 +93,7 @@ export default function TestPage() {
       const newTestId = await saveTestResult({
         userId,
         method,
-        passageId,
+        passageId: passageIdNumber,
         score: results.score,
         timeSpent: results.timeSpent,
         answers: results.answers,
@@ -100,9 +116,6 @@ export default function TestPage() {
     }
   };
 
-  // Handle survey completion
-
-
   // Render different stages
   const renderStage = () => {
     switch (stage) {
@@ -112,7 +125,7 @@ export default function TestPage() {
       case TestStage.READING:
         return (
           <ReadingPassage 
-            passageId={passageId} 
+            passageId={passageIdNumber} 
             onComplete={handleReadingComplete} 
           />
         );
@@ -122,12 +135,10 @@ export default function TestPage() {
           <ClozeTest 
             passage={passage} 
             method={method} 
-            passageId={passageId} 
+            passageId={passageIdNumber} 
             onComplete={handleTestComplete} 
           />
         );
-        
-
         
       case TestStage.COMPLETE:
         return <div className="flex justify-center py-8">Proceeding to next test...</div>;
@@ -156,9 +167,17 @@ export default function TestPage() {
 
   return (
     <div>
+      {/* Debug info - visible only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 p-2 text-xs">
+          <p>Method: {method || 'Not set'}</p>
+          <p>Passage ID: {passageIdNumber || 'Not set'}</p>
+        </div>
+      )}
+      
       <header className="bg-gray-100 p-4 mb-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-xl font-bold">Test {passageId}</h1>
+          <h1 className="text-xl font-bold">Test {passageIdNumber}</h1>
           {stage === TestStage.READING && (
             <p className="text-gray-600">Please read the passage carefully.</p>
           )}
