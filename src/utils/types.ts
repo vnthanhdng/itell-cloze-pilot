@@ -119,7 +119,7 @@ export enum GapGenerationMethod {
   export interface TestResult {
     testId: string;
     userId: string;
-    methodId: MethodId;
+    methodId: string;
     passageId: number;
     score: number;
     timeSpent: number;
@@ -129,3 +129,25 @@ export enum GapGenerationMethod {
     analytics?: TestAnalytics;        
     timeStamp?: Date;
   }
+
+  export interface AnnotationType {
+    source: 'sentence' | 'passage' | 'source' | 'unpredictable';
+    notes?: string;
+  }
+  
+  export interface ClozeTestResults {
+    passageId: number;
+    methodId: MethodId | string;
+    score: number;
+    timeSpent: number;
+    answers: Record<string, string>;
+    annotations: Record<string, AnnotationType>;
+  }
+  
+  export enum InformationSource {
+    SENTENCE = 'sentence',
+    PASSAGE = 'passage',
+    SOURCE = 'source',
+    UNPREDICTABLE = 'unpredictable'
+  }
+

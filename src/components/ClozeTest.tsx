@@ -5,6 +5,8 @@ import { Button } from "./ui/button";
 import { Errorbox } from ".//ui/callout";
 import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
+import { WordItem } from './word-item';
+import { ReadingContainer } from './ui/reading-container';
 
 interface ClozeTestProps {
   passage: string;
@@ -74,7 +76,7 @@ export default function ClozeTest({
     loadGaps();
   }, [methodId, passageId]);
 
-  // Visual feedback effect (like in the CTest component)
+  // Visual feedback effect 
   useEffect(() => {
     if (results && uiState === "initial") {
       applyVisualFeedback();
@@ -226,14 +228,14 @@ export default function ClozeTest({
         const gap = gaps[gapIndex];
         
         // Render the WordItem component for this gap
-        return (
+        return (         
           <WordItem
             key={`gap-${gapIndex}`}
             word={gap.word}
-            showLetter={0} // For cloze test, show 0 letters (completely hidden)
+            showLetter={0} 
             isTarget={true}
             gapIndex={gapIndex}
-          />
+          />     
         );
       }
       
@@ -242,241 +244,10 @@ export default function ClozeTest({
     });
   };
 
-  // WordItem component adapted for cloze test
-  function WordItem({ word, showLetter, isTarget, gapIndex }: { 
-    word: string, 
-    showLetter: number, 
-    isTarget: boolean,
-    gapIndex: number
-  }) {
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-    const [isRevealed, setIsRevealed] = useState(false);
 
-    if (!isTarget) {
-      return <span className="py-0.5">{word}</span>;
-    }
-
-    const letters = word.split("");
-    const revealedLetters = letters.slice(0, showLetter);
-    const hiddenLetters = letters.slice(showLetter);
-
-    const focusInput = (index: number) => {
-      if (inputRefs.current[index]) {
-        inputRefs.current[index]?.focus();
-      }
-    };
-
-    const handleNext = async (currentIndex: number) => {
-      const nextIndex = currentIndex + 1;
-      if (nextIndex < hiddenLetters.length) {
-        focusInput(nextIndex);
-      }
-
-      if (nextIndex === hiddenLetters.length) {
-        // Find the next word's input
-        let parent = inputRefs.current[currentIndex]?.parentElement?.parentElement;
-        if (parent) {
-          while (parent?.nextElementSibling) {
-            const nextSibling = parent.nextElementSibling as HTMLElement;
-            if (nextSibling?.classList.contains("word-item")) {
-              const input = nextSibling.querySelector(
-                "input[data-is-target='true']"
-              ) as HTMLInputElement;
-              if (input) {
-                input.focus();
-                break;
-              }
-            }
-            parent = nextSibling;
-          }
-        }
-      }
-    };
-
-    const handlePrev = async (currentIndex: number, clearPrev: boolean = false) => {
-      const prevIndex = currentIndex - 1;
-      if (prevIndex >= 0) {
-        if (clearPrev && inputRefs.current[prevIndex]) {
-          inputRefs.current[prevIndex].value = "";
-        }
-        focusInput(prevIndex);
-      } else if (currentIndex === 0) {
-        // Find the previous word's last input
-        let parent = inputRefs.current[currentIndex]?.parentElement?.parentElement;
-        if (parent) {
-          while (parent?.previousElementSibling) {
-            const prevSibling = parent.previousElementSibling as HTMLElement;
-            if (prevSibling?.classList.contains("word-item")) {
-              const input = prevSibling.querySelector(
-                "input[data-is-target='true']:last-of-type"
-              ) as HTMLInputElement;
-              if (input) {
-                if (clearPrev) {
-                  input.value = "";
-                }
-                input.focus();
-                break;
-              }
-            }
-            parent = prevSibling;
-          }
-        }
-      }
-    };
-
-    const setInputRef = (index: number) => (el: HTMLInputElement | null) => {
-      inputRefs.current[index] = el;
-    };
-
-    // Handle input change to update user answers
-    const handleInputChange = (letterIndex: number, value: string) => {
-      // Update the user's answer for this gap
-      const currentAnswer = userAnswers[gapIndex] || '';
-      const answerArray = currentAnswer.split('');
-      answerArray[letterIndex] = value;
-      
-      setUserAnswers(prev => ({
-        ...prev,
-        [gapIndex]: answerArray.join('')
-      }));
-    };
-
-    if (isRevealed) {
-      return (
-        <span className="word-item inline-block whitespace-nowrap py-0.5">
-          <span className="text-green-600 font-medium px-1">{word}</span>
-        </span>
-      );
-    }
-
-    return (
-      <span className="word-item inline-block whitespace-nowrap py-0.5">
-        <fieldset
-          data-target-word={word}
-          className="inline-flex items-center px-1 transition-opacity duration-300"
-        >
-          {revealedLetters.map((letter, index) => (
-            <Letter
-              key={index}
-              letter={letter}
-              className="rounded-none px-1 py-1 first-of-type:rounded-l-md focus-visible:ring-1"
-            />
-          ))}
-
-          {hiddenLetters.map((letter, index) => (
-            <LetterInput
-              className="rounded-none px-1 py-1 last-of-type:rounded-r-lg focus-visible:ring-1"
-              letter={letter}
-              key={index}
-              ref={setInputRef(index)}
-              onNext={() => handleNext(index)}
-              onPrev={(clearPrev) => handlePrev(index, clearPrev)}
-              letterIndex={showLetter + index}
-              onChange={(value) => handleInputChange(index, value)}
-              disabled={uiState !== "initial"}
-              value={userAnswers[gapIndex]?.[index] || ''}
-            />
-          ))}
-        </fieldset>
-      </span>
-    );
-  }
-
-  // Letter component (non-editable)
-  function Letter({ letter, className }: { letter: string, className?: string }) {
-    return (
-      <input
-        className={`size-7 bg-muted text-center text-base text-muted-foreground xl:text-lg ${className || ''}`}
-        type="text"
-        defaultValue={letter}
-        data-is-target={false}
-        readOnly
-      />
-    );
-  }
-
-  // LetterInput component (editable)
-  function LetterInput({
-    letter,
-    onNext,
-    onPrev,
-    ref,
-    className,
-    letterIndex,
-    onChange,
-    disabled,
-    value
-  }: {
-    letter: string,
-    onNext?: () => void,
-    onPrev?: (clearPrev?: boolean) => void,
-    ref: (_: HTMLInputElement) => void,
-    className?: string,
-    letterIndex: number,
-    onChange: (value: string) => void,
-    disabled?: boolean,
-    value: string
-  }) {
-    const [isCorrect, setIsCorrect] = useState<boolean | undefined>(undefined);
-    
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        onPrev?.();
-        return;
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        onNext?.();
-        return;
-      }
-
-      if (e.key === "Backspace") {
-        e.preventDefault();
-        const value = e.currentTarget.value;
-        if (value === "") {
-          onPrev?.(true);
-        } else {
-          e.currentTarget.value = "";
-          setIsCorrect(undefined);
-          onChange("");
-        }
-        return;
-      }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
-      if (newValue === "") {
-        setIsCorrect(undefined);
-        onChange("");
-        return;
-      }
-      setIsCorrect(newValue.toLowerCase() === letter.toLowerCase());
-      onChange(newValue);
-      onNext?.();
-    };
-
-    return (
-      <input
-        required
-        data-is-target={true}
-        data-letter-index={letterIndex}
-        ref={ref}
-        type="text"
-        maxLength={1}
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        disabled={disabled}
-        className={`size-7 border bg-background text-center text-base focus-visible:border-2 focus-visible:border-info xl:text-lg ${className || ''}`}
-      />
-    );
-  }
-
-  // No admin functionality
 
   return (
+    
     <div className="space-y-8">
       <Alert variant="info">
         <AlertDescription>
@@ -530,5 +301,6 @@ export default function ClozeTest({
         )}
       </form>
     </div>
+   
   );
 }
