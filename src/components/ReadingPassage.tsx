@@ -1,23 +1,26 @@
 // src/components/ReadingPassage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import ClozeTest from './ClozeTest';
 
 interface ReadingPassageProps {
   passageId: number;
   onComplete: () => void;
   timeLimit?: number; // Time limit in seconds, optional
+  method: string,
 }
 
 export default function ReadingPassage({ 
   passageId, 
   onComplete,
-  timeLimit 
+  timeLimit,
+  method
 }: ReadingPassageProps) {
   const [passage, setPassage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [timeLeft, setTimeLeft] = useState<number | null>(timeLimit || null);
-  const router = useRouter();
+  const [readingComplete, setReadingComplete] = useState<boolean>(false);
+
 
   // Load the passage
   useEffect(() => {
@@ -60,6 +63,22 @@ export default function ReadingPassage({
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const handleReadingComplete = () => {
+    setReadingComplete(true);
+  
+  };
+
+  
+  const handleTestComplete = (results: {
+    score: number;
+    timeSpent: number;
+    answers: Record<string, string>;
+    annotations: Record<string, string>;
+  }) => {
+  
+    onComplete();
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8">Loading passage...</div>;
   }
@@ -80,14 +99,28 @@ export default function ReadingPassage({
         ))}
       </div>
 
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={onComplete}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          {timeLeft !== null ? 'Continue' : 'I\'m Done Reading'}
-        </button>
-      </div>
+      {!readingComplete ? (
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={handleReadingComplete}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            {timeLeft !== null ? 'Continue' : 'I\'m Done Reading'}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-12 border-t pt-8">
+          <h2 className="text-xl font-bold mb-6">Complete the following gaps</h2>
+          <ClozeTest 
+            passage={passage} 
+            method={method} 
+            passageId={passageId} 
+            onComplete={handleTestComplete} 
+          />
+        </div>
+      )}
+
+      
     </div>
   );
 }

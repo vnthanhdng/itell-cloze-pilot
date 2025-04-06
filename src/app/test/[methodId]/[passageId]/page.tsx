@@ -12,8 +12,7 @@ import { GapItem } from '../../../../utils/types';
 
 enum TestStage {
   LOADING,
-  READING,
-  TESTING,
+  IN_PROGRESS,
   COMPLETE
 }
 
@@ -38,7 +37,7 @@ export default function TestPage({
   
   const [userId, setUserId] = useState<string | null>(null);
   const [stage, setStage] = useState<TestStage>(TestStage.LOADING);
-  const [passage, setPassage] = useState<string>('');
+
   const [testId, setTestId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +46,7 @@ export default function TestPage({
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        loadPassage();
+        setStage(TestStage.IN_PROGRESS);
       } else {
         // Not logged in, redirect to login
         router.push('/');
@@ -57,52 +56,16 @@ export default function TestPage({
     return () => unsubscribe();
   }, []);
 
-  // Load the passage content
-  const loadPassage = async () => {
-    try {
-      const response = await fetch(`/passages/passage${passageIdNumber}.md`);
-      if (!response.ok) {
-        throw new Error(`Failed to load passage ${passageIdNumber}: ${response.statusText}`);
-      }
-      
-      const text = await response.text();
-      setPassage(text);
-      setStage(TestStage.READING);
-    } catch (err) {
-      console.error('Error loading passage:', err);
-      setError(`Failed to load reading passage: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    }
-  };
 
-  // Handle reading completion
-  const handleReadingComplete = () => {
-    setStage(TestStage.TESTING);
-  };
 
   // Handle test completion
-  const handleTestComplete = async (results: {
-    score: number;
-    timeSpent: number;
-    answers: Record<string, string>;
-    annotations: Record<string, string>;
-  }) => {
+  const handleTestComplete = async () => {
     if (!userId) return;
 
     try {
-      // Save test results
-      const newTestId = await saveTestResult({
-        userId,
-        method,
-        passageId: passageIdNumber,
-        score: results.score,
-        timeSpent: results.timeSpent,
-        answers: results.answers,
-        annotations: results.annotations
-      });
-
-      setTestId(newTestId);
       const progress = await advanceUserProgress(userId);
       setStage(TestStage.COMPLETE);
+      
       if (progress.complete) {
         // All tests done, go to final survey
         router.push('/complete');
@@ -111,8 +74,8 @@ export default function TestPage({
         router.push(`/test/${progress.nextTest.method}/${progress.nextTest.passageId}`);
       }
     } catch (err) {
-      console.error('Error saving test results:', err);
-      setError('Failed to save your test results. Please try again.');
+      console.error('Error updating user progress:', err);
+      setError('Failed to save your progress. Please try again.');
     }
   };
 
@@ -122,23 +85,15 @@ export default function TestPage({
       case TestStage.LOADING:
         return <div className="flex justify-center py-8">Loading...</div>;
         
-      case TestStage.READING:
+      case TestStage.IN_PROGRESS:
         return (
           <ReadingPassage 
-            passageId={passageIdNumber} 
-            onComplete={handleReadingComplete} 
-          />
-        );
-        
-      case TestStage.TESTING:
-        return (
-          <ClozeTest 
-            passage={passage} 
+            passageId={passageIdNumber}
             method={method} 
-            passageId={passageIdNumber} 
             onComplete={handleTestComplete} 
           />
         );
+      
         
       case TestStage.COMPLETE:
         return <div className="flex justify-center py-8">Proceeding to next test...</div>;
@@ -178,12 +133,9 @@ export default function TestPage({
       <header className="bg-gray-100 p-4 mb-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-xl font-bold">Test {passageIdNumber}</h1>
-          {stage === TestStage.READING && (
-            <p className="text-gray-600">Please read the passage carefully.</p>
-          )}
-          {stage === TestStage.TESTING && (
-            <p className="text-gray-600">Fill in the blanks and annotate each gap.</p>
-          )}
+          <p className="text-gray-600">
+            Read the passage carefully and then complete the cloze test.
+          </p>
         </div>
       </header>
 

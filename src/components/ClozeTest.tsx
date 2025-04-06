@@ -7,7 +7,7 @@ import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
 import AnnotationComponent from './Annotation';
-import { getMethodApiName } from '../utils/methodMapping'; 
+import { getMethodApiName } from '../utils/methodMapping'; // Import the utility function
 
 interface ClozeTestProps {
   passage: string;
@@ -45,12 +45,14 @@ export default function ClozeTest({
   const startTimeRef = useRef<Date>(new Date());
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Load the cloze test data (keeping your original gap loading logic)
+  // Load the cloze test data
   useEffect(() => {
     const loadGaps = async () => {
       try {
-        const apiMethod = getMethodApiName(method); 
-        console.log(apiMethod);
+        // Convert method ID (A, B, C) to API method name
+        // If this is undefined, we want the API to return an error
+        const apiMethod = getMethodApiName(method);
+        
         const response = await fetch(`/api/gap-methods/${apiMethod}?passageId=${passageId}`);
         const data = await response.json();
         
@@ -201,7 +203,7 @@ export default function ClozeTest({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (uiState === "showingAnnotations" && annotationsComplete) {
+    if (annotationsComplete) {
       const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
       
       // Convert answers to the format expected by onComplete
@@ -255,10 +257,7 @@ export default function ClozeTest({
     });
   };
 
-
-
   return (
-    
     <div className="space-y-8">
       <Alert variant="info">
         <AlertDescription>
@@ -267,7 +266,6 @@ export default function ClozeTest({
         </AlertDescription>
       </Alert>
       
-      {/* No admin functionality */}
       {error && <Errorbox title={error.message} />}
 
       <form
@@ -277,11 +275,10 @@ export default function ClozeTest({
         onSubmit={handleSubmit}
       >
         <div className="space-y-3 leading-relaxed xl:text-lg">
-          {/* Render your passage with gaps using the WordItem component */}
           {renderPassageWithGaps()}
         </div>
 
-        {uiState === "showingAnnotations" && (
+  
           <AnnotationComponent 
             gaps={gaps} 
             value={annotations}
@@ -289,7 +286,7 @@ export default function ClozeTest({
             isComplete={annotationsComplete}
             setIsComplete={setAnnotationsComplete}
           />
-        )}
+
         
         <div className="flex gap-4">
           {uiState === "initial" ? (
@@ -318,7 +315,7 @@ export default function ClozeTest({
             <p className="text-blue-700">
               You scored {results.score.toFixed(1)}%. {results.score >= 70 ? 'Great job!' : 'Keep practicing!'}
             </p>
-            {uiState === "showingAnnotations" && !annotationsComplete && (
+           {!annotationsComplete && (
               <p className="text-blue-700 mt-2">
                 Please complete the annotations for all gaps below before continuing.
               </p>
@@ -327,6 +324,5 @@ export default function ClozeTest({
         )}
       </form>
     </div>
-   
   );
 }

@@ -16,8 +16,8 @@ try {
   
   console.log(`Found ${lines.length} passages in JSONL file`);
   
-  // Extract each passage (up to 4 for testing)
-  const count = Math.min(lines.length, 4);
+ 
+  const count = Math.min(lines.length, 16);
   for (let i = 0; i < count; i++) {
     try {
       const passageData = JSON.parse(lines[i]);
