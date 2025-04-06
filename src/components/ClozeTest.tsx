@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GapItem, MethodId } from '../utils/types';
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Errorbox } from ".//ui/callout";
+import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface ClozeTestProps {
   passage: string;
   methodId: string | MethodId;
   passageId: number;
+  user: any; // Replace with your user type
   onComplete: (results: {
     score: number;
     timeSpent: number;
@@ -12,560 +18,516 @@ interface ClozeTestProps {
   }) => void;
 }
 
-// Represents a single letter in a gapped word
-interface LetterState {
-  letter: string;
-  isVisible: boolean;
-  userInput: string;
-}
-
-// Represents a word with its gapping state
-interface WordState {
-  originalWord: string;
-  letters: LetterState[];
-  isTarget: boolean;
-  isCorrect?: boolean;
-  alternatives?: string[]; // Possible alternative correct answers
-  gapId?: number;         // Reference to the original gap
-}
-
 export default function ClozeTest({ 
   passage, 
   methodId, 
-  passageId, 
+  passageId,
+  user,
   onComplete 
 }: ClozeTestProps) {
   const [gaps, setGaps] = useState<GapItem[]>([]);
-  const [processedWords, setProcessedWords] = useState<WordState[]>([]);
+  const [clozeText, setClozeText] = useState<string>('');
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [showingAnswers, setShowingAnswers] = useState(false);
-  const [feedbackStage, setFeedbackStage] = useState<'input' | 'feedback' | 'complete'>('input');
+  const [error, setError] = useState<Error | null>(null);
+  const [uiState, setUiState] = useState<
+    "initial" | "showingAnswers" | "showingContinue"
+  >("initial");
+  const [results, setResults] = useState<{
+    answers: Array<{ word: string; isCorrect: boolean }>;
+    score: number;
+  } | null>(null);
+  
   const startTimeRef = useRef<Date>(new Date());
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Load the gaps based on the method
+  // Load the cloze test data (keeping your original gap loading logic)
   useEffect(() => {
     const loadGaps = async () => {
       try {
-        // Fetch from the server-side API
-        const response = await fetch(`/api/gap-methods/${methodId.toLowerCase()}?passageId=${passageId}`);
+        const response = await fetch(`/api/gap-methods/${methodId}?passageId=${passageId}`);
         const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
         setGaps(data.gaps);
+        setClozeText(data.clozeText);
         
-        // Process gaps to create the word state structure
-        processPassageWithGaps(passage, data.gaps);
+        // Initialize user answers
+        const initialAnswers: Record<string, string> = {};
+        data.gaps.forEach((gap, index) => {
+          initialAnswers[index] = '';
+        });
+        
+        setUserAnswers(initialAnswers);
+        
       } catch (error) {
-        console.error('Error loading gaps:', error);
-        // Fallback to a simple gap generation method
-        const words = passage.split(/\s+/);
-        
-        // Create simplified gaps that match your GapItem interface
-        const simpleGaps: GapItem[] = words
-          .map((word, index) => {
-            const startIndex = passage.indexOf(word);
-            const cleanWord = word.replace(/[.,;:!?]$/, ''); // Remove punctuation
-            return { 
-              word: cleanWord, 
-              start_idx: startIndex,
-              end_idx: startIndex + cleanWord.length,
-              context: `...${cleanWord}...`,
-              type: 'fallback'
-            };
-          })
-          .filter((_, index) => index % 7 === 3) // Every 7th word starting from the 4th
-        
-        setGaps(simpleGaps);
-        processPassageWithGaps(passage, simpleGaps);
+        console.error('Error loading cloze test:', error);
+        setError(error instanceof Error ? error : new Error('Failed to load test'));
       } finally {
         setLoading(false);
       }
     };
-
+    
     loadGaps();
-  }, [methodId, passageId, passage]);
+  }, [methodId, passageId]);
 
-  // Helper to determine how many letters to show based on method and word
-  const getLetterVisibility = (word: string, gap?: GapItem): boolean[] => {
-    const len = word.length;
-    
-    // Initialize with all letters hidden
-    const visibility = new Array(len).fill(false);
-    
-    // Apply method-specific logic
-    switch (methodId) {
-      case MethodId.A: // Fine-tuned on CLOTH dataset - no hints
-        // No letters visible
-        break;
-        
-      case MethodId.B: // Rational deletions - show first letter
-        visibility[0] = true;
-        break;
-        
-      case MethodId.C: // Keyness metrics - show first and last letters
-        if (len > 1) {
-          visibility[0] = true;
-          visibility[len - 1] = true;
-        }
-        break;
-        
-      case MethodId.D: // Human gaps - show half the word (c-test style)
-        const halfLen = Math.ceil(len / 2);
-        for (let i = 0; i < halfLen; i++) {
-          visibility[i] = true;
-        }
-        break;
-        
-      default:
-        // Default behavior - first letter visible
-        if (len > 0) visibility[0] = true;
+  // Visual feedback effect (like in the CTest component)
+  useEffect(() => {
+    if (results && uiState === "initial") {
+      applyVisualFeedback();
+      setUiState("showingAnswers");
     }
-    
-    // Override with gap-specific hints if available
-    if (gap?.hints) {
-      const hintPattern = gap.hints[0]; // Use first hint as pattern
-      if (hintPattern && hintPattern.length === len) {
-        return hintPattern.split('').map(h => h !== '_');
-      }
-    }
-    
-    return visibility;
-  };
+  }, [results, uiState]);
 
-  // Process the passage with gaps to create the word state structure
-  const processPassageWithGaps = (text: string, gaps: GapItem[]) => {
-    // Map gaps to positions in the text
-    // We need to locate each gap in the text
-    const tokenInfo: {
-      token: string;
-      startIdx: number;
-      endIdx: number;
-      isGap: boolean;
-      gap?: GapItem;
-      wordIndex: number;
-    }[] = [];
-    
-    // First tokenize the text and store positions
-    let currentWordIndex = 0;
-    const tokens = text.split(/(\s+|[.!?,;:])/);
-    let position = 0;
-    
-    tokens.forEach((token) => {
-      if (!token) return;
-      
-      const tokenStart = text.indexOf(token, position);
-      if (tokenStart === -1) return; // Skip if not found
-      
-      const tokenEnd = tokenStart + token.length;
-      
-      // Keep track of position for next search
-      position = tokenEnd;
-      
-      // Determine if this is a word or separatorq
-      const isWord = !/^\s+$/.test(token) && !/^[.!?,;:]$/.test(token);
-      
-      // If it's a word, check if it matches any gaps
-      let isGap = false;
-      let matchingGap: GapItem | undefined;
-      
-      if (isWord) {
-        // Find if this token overlaps with any gap
-        matchingGap = gaps.find(gap => {
-          // Allow for some position flexibility (±3 characters)
-          return Math.abs(gap.start_idx - tokenStart) <= 3 &&
-                 Math.abs(gap.end_idx - tokenEnd) <= 3;
-        });
-        
-        isGap = !!matchingGap;
-        currentWordIndex += isWord ? 1 : 0;
-      }
-      
-      tokenInfo.push({
-        token,
-        startIdx: tokenStart,
-        endIdx: tokenEnd,
-        isGap,
-        gap: matchingGap,
-        wordIndex: isWord ? currentWordIndex - 1 : -1
+  useEffect(() => {
+    if (uiState === "showingAnswers") {
+      const timer = setTimeout(() => {
+        setUiState("showingContinue");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [uiState]);
+
+  // Apply visual feedback to input elements
+  const applyVisualFeedback = () => {
+    if (!formRef.current || !results) return;
+
+    const fields = Array.from(
+      formRef.current.querySelectorAll("fieldset[data-target-word]")
+    ) as HTMLFieldSetElement[];
+
+    fields.forEach((field, index) => {
+      const word = field.dataset.targetWord as string;
+      const inputs = Array.from(
+        field.querySelectorAll("input[type=text]")
+      ) as HTMLInputElement[];
+
+      const answer = results.answers.find((a) => a.word === word);
+
+      if (!answer) return;
+
+      const targetInputs = inputs.filter(
+        (input) => input.dataset.isTarget === "true"
+      );
+
+      targetInputs.forEach((input) => {
+        const letterIndex = input.dataset.letterIndex
+          ? parseInt(input.dataset.letterIndex)
+          : 0;
+        const correctLetter = word[letterIndex];
+
+        input.readOnly = true;
+
+        if (answer.isCorrect) {
+          input.style.backgroundColor = "#d1fae5";
+          input.style.borderColor = "#10b981";
+          input.style.color = "#047857";
+        } else {
+          input.style.backgroundColor = "#fee2e2";
+          input.style.borderColor = "#ef4444";
+          input.style.color = "#b91c1c";
+
+          if (input.value !== correctLetter) {
+            input.value = correctLetter;
+          }
+        }
       });
     });
-    
-    // Now process tokens into word states
-    const processedWords: WordState[] = [];
-    
-    tokenInfo.forEach((info, index) => {
-      const { token, isGap, gap } = info;
-      
-      // Skip empty tokens
-      if (!token) return;
-      
-      // Check if it's a word or a separator
-      if (/^\s+$/.test(token) || /^[.!?,;:]$/.test(token)) {
-        // This is a separator, not a target
-        processedWords.push({
-          originalWord: token,
-          letters: token.split('').map(letter => ({
-            letter,
-            isVisible: true,
-            userInput: ''
-          })),
-          isTarget: false
-        });
-        return;
+  };
+
+  // Process form data
+  const processForm = () => {
+    if (!formRef.current) return { correctWords: 0, totalWords: 0, answers: [], score: 0 };
+
+    const fields = Array.from(
+      formRef.current.querySelectorAll("fieldset[data-target-word]")
+    ) as HTMLFieldSetElement[];
+
+    let correctWords = 0;
+    const answers: Array<{ word: string; isCorrect: boolean }> = [];
+
+    fields.forEach((field) => {
+      const word = field.dataset.targetWord as string;
+      const inputs = Array.from(
+        field.querySelectorAll("input[type=text]")
+      ) as HTMLInputElement[];
+
+      const targetInputs = inputs.filter(input => input.dataset.isTarget === "true");
+      const userInput = targetInputs.map(input => input.value).join('');
+      const isCorrect = userInput === word.slice(inputs.length - targetInputs.length);
+
+      if (isCorrect) {
+        correctWords++;
       }
       
-      // This is a word
-      if (isGap && gap) {
-        // This word should be gapped
-        const word = token.replace(/[.,;:!?]$/, ''); // Remove punctuation
-        const punctuation = token.slice(word.length);
-        
-        // Get letter visibility based on method and/or gap hints
-        const letterVisibility = getLetterVisibility(word, gap);
-        
-        // Create letter states
-        const letters: LetterState[] = word.split('').map((letter, letterIndex) => ({
-          letter,
-          isVisible: letterVisibility[letterIndex] || false,
-          userInput: ''
-        }));
-        
-        // Add any punctuation as visible
-        if (punctuation) {
-          letters.push(...punctuation.split('').map(p => ({
-            letter: p,
-            isVisible: true,
-            userInput: ''
-          })));
-        }
-        
-        processedWords.push({
-          originalWord: word + punctuation,
-          letters,
-          isTarget: true,
-          alternatives: gap.alternatives,
-          gapId: index // Store index for reference
-        });
-      } else {
-        // This word is not gapped, show all letters
-        processedWords.push({
-          originalWord: token,
-          letters: token.split('').map(letter => ({
-            letter,
-            isVisible: true,
-            userInput: ''
-          })),
-          isTarget: false
-        });
-      }
+      answers.push({ word, isCorrect });
     });
-    
-    setProcessedWords(processedWords);
-  };
 
-  // Handle letter input change
-  const handleLetterChange = (wordIndex: number, letterIndex: number, value: string) => {
-    setProcessedWords(prev => {
-      const newWords = [...prev];
-      const word = { ...newWords[wordIndex] };
-      const letters = [...word.letters];
-      letters[letterIndex] = { ...letters[letterIndex], userInput: value };
-      word.letters = letters;
-      newWords[wordIndex] = word;
-      return newWords;
-    });
-  };
-
-  // Handle keyboard navigation between inputs
-  const handleLetterKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    wordIndex: number, 
-    letterIndex: number
-  ) => {
-    const word = processedWords[wordIndex];
+    const score = (correctWords / fields.length) * 100;
     
-    switch (e.key) {
-      case 'ArrowRight':
-        // Move to next letter or next word
-        e.preventDefault();
-        if (letterIndex < word.letters.length - 1 && !word.letters[letterIndex + 1].isVisible) {
-          // Focus next letter in same word
-          const nextInput = formRef.current?.querySelector(
-            `input[data-word-index="${wordIndex}"][data-letter-index="${letterIndex + 1}"]`
-          ) as HTMLInputElement;
-          nextInput?.focus();
-        } else {
-          // Find next word with input
-          let nextWordIndex = wordIndex + 1;
-          while (nextWordIndex < processedWords.length) {
-            if (processedWords[nextWordIndex].isTarget) {
-              const nextInput = formRef.current?.querySelector(
-                `input[data-word-index="${nextWordIndex}"][data-letter-index="0"]`
-              ) as HTMLInputElement;
-              nextInput?.focus();
-              break;
-            }
-            nextWordIndex++;
-          }
-        }
-        break;
-        
-      case 'ArrowLeft':
-        // Move to previous letter or previous word
-        e.preventDefault();
-        if (letterIndex > 0 && !word.letters[letterIndex - 1].isVisible) {
-          // Focus previous letter in same word
-          const prevInput = formRef.current?.querySelector(
-            `input[data-word-index="${wordIndex}"][data-letter-index="${letterIndex - 1}"]`
-          ) as HTMLInputElement;
-          prevInput?.focus();
-        } else {
-          // Find previous word with input
-          let prevWordIndex = wordIndex - 1;
-          while (prevWordIndex >= 0) {
-            if (processedWords[prevWordIndex].isTarget) {
-              const prevWord = processedWords[prevWordIndex];
-              const lastInputIndex = prevWord.letters.findLastIndex(l => !l.isVisible);
-              if (lastInputIndex !== -1) {
-                const prevInput = formRef.current?.querySelector(
-                  `input[data-word-index="${prevWordIndex}"][data-letter-index="${lastInputIndex}"]`
-                ) as HTMLInputElement;
-                prevInput?.focus();
-                break;
-              }
-            }
-            prevWordIndex--;
-          }
-        }
-        break;
-        
-      case 'Backspace':
-        // Handle backspace - clear current or go to previous
-        if (e.currentTarget.value === '') {
-          e.preventDefault();
-          if (letterIndex > 0 && !word.letters[letterIndex - 1].isVisible) {
-            // Go to previous letter in same word
-            const prevInput = formRef.current?.querySelector(
-              `input[data-word-index="${wordIndex}"][data-letter-index="${letterIndex - 1}"]`
-            ) as HTMLInputElement;
-            prevInput?.focus();
-          } else {
-            // Find previous word with input
-            let prevWordIndex = wordIndex - 1;
-            while (prevWordIndex >= 0) {
-              if (processedWords[prevWordIndex].isTarget) {
-                const prevWord = processedWords[prevWordIndex];
-                const lastInputIndex = prevWord.letters.findLastIndex(l => !l.isVisible);
-                if (lastInputIndex !== -1) {
-                  const prevInput = formRef.current?.querySelector(
-                    `input[data-word-index="${prevWordIndex}"][data-letter-index="${lastInputIndex}"]`
-                  ) as HTMLInputElement;
-                  prevInput?.focus();
-                  break;
-                }
-              }
-              prevWordIndex--;
-            }
-          }
-        }
-        break;
-    }
-  };
-
-  // Helper to get whole word input from letters
-  const getWordInput = (word: WordState): string => {
-    const inputLetters = word.letters
-      .map(letter => letter.isVisible ? letter.letter : letter.userInput);
-    return inputLetters.join('');
-  };
-
-  // Check answers and provide feedback
-  const checkAnswers = () => {
-    const targetWords = processedWords.filter(word => word.isTarget);
-    let correctCount = 0;
-    
-    // Mark each word as correct or not
-    const checkedWords = processedWords.map(word => {
-      if (!word.isTarget) return word;
-      
-      const userWord = getWordInput(word);
-      
-      // Check against original word and alternatives
-      const isCorrect = word.alternatives ? 
-        [word.originalWord, ...word.alternatives].includes(userWord) : 
-        userWord === word.originalWord;
-      
-      if (isCorrect) correctCount++;
-      
-      return {
-        ...word,
-        isCorrect
-      };
-    });
-    
-    setProcessedWords(checkedWords);
-    setShowingAnswers(true);
-    setFeedbackStage('feedback');
-    
-    // Calculate score
-    const score = targetWords.length > 0 ? (correctCount / targetWords.length) * 100 : 0;
-    const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
-    
-    // Build answers object
-    const answers: Record<string, string> = {};
-    targetWords.forEach((word, index) => {
-      answers[index] = getWordInput(word);
-    });
-    
-    // Wait 3 seconds before offering to continue
-    setTimeout(() => {
-      setFeedbackStage('complete');
-    }, 3000);
-    
-    // Return results
     return {
+      correctWords,
+      totalWords: fields.length,
+      answers,
       score,
-      timeSpent,
-      answers
     };
   };
 
-  // Handle submission
+  // Handle "Show Answers" button click
+  const handleShowAnswers = () => {
+    const { answers, score } = processForm();
+    setResults({ answers, score });
+
+    toast.info(
+      "Test finished, please take some time reviewing the correct answers before continuing"
+    );
+  };
+
+  // Handle final submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const results = checkAnswers();
     
-    // We don't call onComplete here - we wait for the user to click Continue
-    // after reviewing their answers
-  };
-  
-  // Handle continue after feedback
-  const handleContinue = () => {
-    // Build the final results object
-    const targetWords = processedWords.filter(word => word.isTarget);
-    let correctCount = 0;
-    
-    targetWords.forEach(word => {
-      if (word.isCorrect) correctCount++;
-    });
-    
-    const score = targetWords.length > 0 ? (correctCount / targetWords.length) * 100 : 0;
-    const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
-    
-    // Build answers object
-    const answers: Record<string, string> = {};
-    targetWords.forEach((word, index) => {
-      answers[index] = getWordInput(word);
-    });
-    
-    // Call the completion handler
-    onComplete({
-      score,
-      timeSpent,
-      answers
-    });
+    if (uiState === "showingContinue") {
+      const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
+      
+      // Convert answers to the format expected by onComplete
+      const answerMap: Record<string, string> = {};
+      results?.answers.forEach((item, index) => {
+        answerMap[index.toString()] = item.word;
+      });
+      
+      onComplete({
+        score: results?.score || 0,
+        timeSpent,
+        answers: answerMap
+      });
+    }
   };
 
   if (loading) {
     return <div className="flex justify-center py-8">Preparing test...</div>;
   }
 
-  return (
-    <div className="max-w-3xl mx-auto p-4">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Fill in the blanks</h2>
-        <p className="text-gray-600 mb-4">
-          Fill in each blank with the appropriate word that fits the context.
-        </p>
+  if (error) {
+    return <Errorbox title={error.message} />;
+  }
+
+  // Render the WordItem component for each word in the text
+  const renderPassageWithGaps = () => {
+    // This is where you'll integrate your gap generation logic with the WordItem UI
+    return clozeText.split(/(_{3,})/).map((part, index) => {
+      if (part.match(/_{3,}/)) {
+        // This is a gap
+        const gapIndex = Math.floor(index / 2);
+        const gap = gaps[gapIndex];
         
-        {feedbackStage === 'feedback' && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+        // Render the WordItem component for this gap
+        return (
+          <WordItem
+            key={`gap-${gapIndex}`}
+            word={gap.word}
+            showLetter={0} // For cloze test, show 0 letters (completely hidden)
+            isTarget={true}
+            gapIndex={gapIndex}
+          />
+        );
+      }
+      
+      // Regular text
+      return <span key={`text-${index}`}>{part}</span>;
+    });
+  };
+
+  // WordItem component adapted for cloze test
+  function WordItem({ word, showLetter, isTarget, gapIndex }: { 
+    word: string, 
+    showLetter: number, 
+    isTarget: boolean,
+    gapIndex: number
+  }) {
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [isRevealed, setIsRevealed] = useState(false);
+
+    if (!isTarget) {
+      return <span className="py-0.5">{word}</span>;
+    }
+
+    const letters = word.split("");
+    const revealedLetters = letters.slice(0, showLetter);
+    const hiddenLetters = letters.slice(showLetter);
+
+    const focusInput = (index: number) => {
+      if (inputRefs.current[index]) {
+        inputRefs.current[index]?.focus();
+      }
+    };
+
+    const handleNext = async (currentIndex: number) => {
+      const nextIndex = currentIndex + 1;
+      if (nextIndex < hiddenLetters.length) {
+        focusInput(nextIndex);
+      }
+
+      if (nextIndex === hiddenLetters.length) {
+        // Find the next word's input
+        let parent = inputRefs.current[currentIndex]?.parentElement?.parentElement;
+        if (parent) {
+          while (parent?.nextElementSibling) {
+            const nextSibling = parent.nextElementSibling as HTMLElement;
+            if (nextSibling?.classList.contains("word-item")) {
+              const input = nextSibling.querySelector(
+                "input[data-is-target='true']"
+              ) as HTMLInputElement;
+              if (input) {
+                input.focus();
+                break;
+              }
+            }
+            parent = nextSibling;
+          }
+        }
+      }
+    };
+
+    const handlePrev = async (currentIndex: number, clearPrev: boolean = false) => {
+      const prevIndex = currentIndex - 1;
+      if (prevIndex >= 0) {
+        if (clearPrev && inputRefs.current[prevIndex]) {
+          inputRefs.current[prevIndex].value = "";
+        }
+        focusInput(prevIndex);
+      } else if (currentIndex === 0) {
+        // Find the previous word's last input
+        let parent = inputRefs.current[currentIndex]?.parentElement?.parentElement;
+        if (parent) {
+          while (parent?.previousElementSibling) {
+            const prevSibling = parent.previousElementSibling as HTMLElement;
+            if (prevSibling?.classList.contains("word-item")) {
+              const input = prevSibling.querySelector(
+                "input[data-is-target='true']:last-of-type"
+              ) as HTMLInputElement;
+              if (input) {
+                if (clearPrev) {
+                  input.value = "";
+                }
+                input.focus();
+                break;
+              }
+            }
+            parent = prevSibling;
+          }
+        }
+      }
+    };
+
+    const setInputRef = (index: number) => (el: HTMLInputElement | null) => {
+      inputRefs.current[index] = el;
+    };
+
+    // Handle input change to update user answers
+    const handleInputChange = (letterIndex: number, value: string) => {
+      // Update the user's answer for this gap
+      const currentAnswer = userAnswers[gapIndex] || '';
+      const answerArray = currentAnswer.split('');
+      answerArray[letterIndex] = value;
+      
+      setUserAnswers(prev => ({
+        ...prev,
+        [gapIndex]: answerArray.join('')
+      }));
+    };
+
+    if (isRevealed) {
+      return (
+        <span className="word-item inline-block whitespace-nowrap py-0.5">
+          <span className="text-green-600 font-medium px-1">{word}</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="word-item inline-block whitespace-nowrap py-0.5">
+        <fieldset
+          data-target-word={word}
+          className="inline-flex items-center px-1 transition-opacity duration-300"
+        >
+          {revealedLetters.map((letter, index) => (
+            <Letter
+              key={index}
+              letter={letter}
+              className="rounded-none px-1 py-1 first-of-type:rounded-l-md focus-visible:ring-1"
+            />
+          ))}
+
+          {hiddenLetters.map((letter, index) => (
+            <LetterInput
+              className="rounded-none px-1 py-1 last-of-type:rounded-r-lg focus-visible:ring-1"
+              letter={letter}
+              key={index}
+              ref={setInputRef(index)}
+              onNext={() => handleNext(index)}
+              onPrev={(clearPrev) => handlePrev(index, clearPrev)}
+              letterIndex={showLetter + index}
+              onChange={(value) => handleInputChange(index, value)}
+              disabled={uiState !== "initial"}
+              value={userAnswers[gapIndex]?.[index] || ''}
+            />
+          ))}
+        </fieldset>
+      </span>
+    );
+  }
+
+  // Letter component (non-editable)
+  function Letter({ letter, className }: { letter: string, className?: string }) {
+    return (
+      <input
+        className={`size-7 bg-muted text-center text-base text-muted-foreground xl:text-lg ${className || ''}`}
+        type="text"
+        defaultValue={letter}
+        data-is-target={false}
+        readOnly
+      />
+    );
+  }
+
+  // LetterInput component (editable)
+  function LetterInput({
+    letter,
+    onNext,
+    onPrev,
+    ref,
+    className,
+    letterIndex,
+    onChange,
+    disabled,
+    value
+  }: {
+    letter: string,
+    onNext?: () => void,
+    onPrev?: (clearPrev?: boolean) => void,
+    ref: (_: HTMLInputElement) => void,
+    className?: string,
+    letterIndex: number,
+    onChange: (value: string) => void,
+    disabled?: boolean,
+    value: string
+  }) {
+    const [isCorrect, setIsCorrect] = useState<boolean | undefined>(undefined);
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onPrev?.();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        onNext?.();
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        const value = e.currentTarget.value;
+        if (value === "") {
+          onPrev?.(true);
+        } else {
+          e.currentTarget.value = "";
+          setIsCorrect(undefined);
+          onChange("");
+        }
+        return;
+      }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      if (newValue === "") {
+        setIsCorrect(undefined);
+        onChange("");
+        return;
+      }
+      setIsCorrect(newValue.toLowerCase() === letter.toLowerCase());
+      onChange(newValue);
+      onNext?.();
+    };
+
+    return (
+      <input
+        required
+        data-is-target={true}
+        data-letter-index={letterIndex}
+        ref={ref}
+        type="text"
+        maxLength={1}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        className={`size-7 border bg-background text-center text-base focus-visible:border-2 focus-visible:border-info xl:text-lg ${className || ''}`}
+      />
+    );
+  }
+
+  // No admin functionality
+
+  return (
+    <div className="space-y-8">
+      <Alert variant="info">
+        <AlertDescription>
+          Fill in each blank with the appropriate word that fits the context. 
+          Use the context of the passage to help you determine the missing words.
+        </AlertDescription>
+      </Alert>
+      
+      {/* No admin functionality */}
+      {error && <Errorbox title={error.message} />}
+
+      <form
+        id="cloze-form"
+        className="flex flex-col gap-4 rounded-lg"
+        ref={formRef}
+        onSubmit={handleSubmit}
+      >
+        <div className="space-y-3 leading-relaxed xl:text-lg">
+          {/* Render your passage with gaps using the WordItem component */}
+          {renderPassageWithGaps()}
+        </div>
+        
+        <div className="flex gap-4">
+          {uiState === "initial" ? (
+            <Button type="button" onClick={handleShowAnswers} className="w-48">
+              <span className="inline-flex items-center gap-2">
+                <SendHorizontalIcon className="size-3" />
+                Show Answers
+              </span>
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              disabled={uiState === "showingAnswers"}
+              className="w-48"
+            >
+              <span className="inline-flex items-center gap-2">
+                <ArrowLeftIcon className="size-3" />
+                Continue
+              </span>
+            </Button>
+          )}
+        </div>
+        
+        {results && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
             <p className="text-blue-700">
-              Review your answers below. Correct answers are shown in green, incorrect answers in red.
+              You scored {results.score.toFixed(1)}%. {results.score >= 70 ? 'Great job!' : 'Keep practicing!'}
             </p>
           </div>
         )}
-      </div>
-
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-        <div className="prose prose-lg max-w-none leading-relaxed">
-          {/* Render words with gaps as needed */}
-          <p>
-            {processedWords.map((word, wordIndex) => (
-              <span 
-                key={`word-${wordIndex}`} 
-                className={`${word.isTarget ? 'relative inline-block' : 'inline'} ${
-                  word.isTarget && showingAnswers ? (
-                    word.isCorrect ? 'bg-green-100' : 'bg-red-100'
-                  ) : ''
-                }`}
-              >
-                {word.letters.map((letter, letterIndex) => {
-                  if (letter.isVisible) {
-                    // Regular visible letter
-                    return <span key={`letter-${wordIndex}-${letterIndex}`}>{letter.letter}</span>;
-                  } else {
-                    // Letter that needs an input
-                    return (
-                      <input
-                        key={`input-${wordIndex}-${letterIndex}`}
-                        type="text"
-                        maxLength={1}
-                        size={1}
-                        value={letter.userInput}
-                        onChange={(e) => handleLetterChange(wordIndex, letterIndex, e.target.value)}
-                        onKeyDown={(e) => handleLetterKeyDown(e, wordIndex, letterIndex)}
-                        disabled={showingAnswers}
-                        data-word-index={wordIndex}
-                        data-letter-index={letterIndex}
-                        className={`w-6 h-8 text-center inline-block border-b-2 mx-px focus:outline-none focus:border-blue-500 ${
-                          showingAnswers ? (
-                            word.isCorrect ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
-                          ) : 'border-gray-300'
-                        }`}
-                        required
-                      />
-                    );
-                  }
-                })}
-                {/* If showing answers and the word is incorrect, show the correct word */}
-                {word.isTarget && showingAnswers && !word.isCorrect && (
-                  <span className="absolute -bottom-5 left-0 text-xs text-red-600 font-medium">
-                    {word.originalWord}
-                  </span>
-                )}
-                {/* Add appropriate spacing */}
-                {word.originalWord.match(/^\s+$/) ? null : ' '}
-              </span>
-            ))}
-          </p>
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          {feedbackStage === 'input' ? (
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Check Answers
-            </button>
-          ) : feedbackStage === 'complete' ? (
-            <button
-              type="button"
-              onClick={handleContinue}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-            >
-              Continue
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="px-6 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed"
-            >
-              Please review your answers...
-            </button>
-          )}
-        </div>
       </form>
     </div>
   );

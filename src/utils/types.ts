@@ -106,3 +106,26 @@ export enum GapGenerationMethod {
       processingTime?: number;
     };
   }
+
+  export interface TestAnalytics {
+    totalTimeSpent: number;           // Total time in seconds
+    gapTimeDistribution: number[];    // Time spent on each gap
+    editCounts: number[];             // Number of edits per gap
+    focusEvents: number[];            // Times user focused on each gap
+    typingSpeed: number;              // Average chars per second
+    pausePatterns: [number, number][]; // [timestamp, duration] of pauses
+  }
+
+  export interface TestResult {
+    testId: string;
+    userId: string;
+    methodId: MethodId;
+    passageId: number;
+    score: number;
+    timeSpent: number;
+    answers: Record<string, string>;
+    correctAnswers: string[];
+    incorrectAnswers: string[];
+    analytics?: TestAnalytics;        
+    timeStamp?: Date;
+  }

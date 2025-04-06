@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
-
-const execAsync = promisify(exec);
-
+import { MethodId } from '../../../../utils/types';
 
 export async function GET(
   request: NextRequest,
@@ -15,9 +11,7 @@ export async function GET(
     const methodId = (await params).methodId;
     const searchParams = new URL(request.url).searchParams;
     const passageId = searchParams.get('passageId');
-    const numGaps = searchParams.get('numGaps') || '10';
     
-    // Validate inputs
     if (!methodId || !passageId) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -25,96 +19,73 @@ export async function GET(
       );
     }
     
-    // Read the passage file
-    const passagePath = path.join(process.cwd(), 'public', 'passages', `passage${passageId}.md`);
-    let passageText;
+    // Read the JSONL file
+    const jsonlPath = path.join(process.cwd(), 'data', 'passages.jsonl');
+    let jsonlData;
     
     try {
-      passageText = await fs.readFile(passagePath, 'utf-8');
+      jsonlData = await fs.readFile(jsonlPath, 'utf-8');
     } catch (error) {
-      console.error(`Error reading passage file: ${passagePath}`, error);
+      console.error('Error reading JSONL file:', error);
+      return NextResponse.json(
+        { error: 'Failed to load passages data' },
+        { status: 500 }
+      );
+    }
+    
+    // Parse the JSONL file and find the requested passage
+    const lines = jsonlData.split('\n').filter(line => line.trim());
+    const passageIndex = parseInt(passageId) - 1;
+    
+    if (passageIndex < 0 || passageIndex >= lines.length) {
       return NextResponse.json(
         { error: 'Passage not found' },
         { status: 404 }
       );
     }
     
-    // Create a temporary JSON file with the parameters
-    const tmpDir = path.join(process.cwd(), 'tmp');
-    await fs.mkdir(tmpDir, { recursive: true });
+    const passage = JSON.parse(lines[passageIndex]);
     
-    const tmpInputPath = path.join(tmpDir, `input_${Date.now()}.json`);
-    const tmpOutputPath = path.join(tmpDir, `output_${Date.now()}.json`);
-    
-    const inputData = {
-      passage_text: passageText,
-      num_gaps: parseInt(numGaps),
-      // Additional parameters could be added here
-    };
-    
-    await fs.writeFile(tmpInputPath, JSON.stringify(inputData));
-    
-    // Call the Python script
-    const scriptPath = path.join(process.cwd(), 'python', 'gap_methods', 'method_runner.py');
-    
-    try {
-      const { stdout, stderr } = await execAsync(
-        `python ${scriptPath} ${methodId.toLowerCase()} ${tmpInputPath} ${tmpOutputPath}`
-      );
-      
-      if (stderr) {
-        console.warn('Python stderr:', stderr);
-      }
-      
-      // Read the result
-      const resultJson = await fs.readFile(tmpOutputPath, 'utf-8');
-      const result = JSON.parse(resultJson);
-      
-      // Clean up temporary files
-      await Promise.all([
-        fs.unlink(tmpInputPath),
-        fs.unlink(tmpOutputPath)
-      ]).catch(e => console.error('Error cleaning up temp files:', e));
-      
-      // Check if there was an error
-      if (result.error) {
-        return NextResponse.json(
-          { error: result.error },
-          { status: 500 }
-        );
-      }
-      
-      // Return the gaps
-      return NextResponse.json({ gaps: result });
-      
-    } catch (error) {
-      console.error('Error executing Python script:', error);
-      
-      // Fallback to a simple gap generation method if Python fails
-      const words = passageText.split(/\s+/);
-      const simpleGaps = words
-        .map((word, index) => {
-          const wordStart = passageText.indexOf(word);
-          return { 
-            word, 
-            wordIndex: index,
-            startIndex: wordStart,
-            endIndex: wordStart + word.length,
-            context: `...${word}...`
-          };
-        })
-        .filter((_, index) => index % 7 === 3) // Every 7th word starting from the 4th
-        .map(gap => ({
-          ...gap,
-          word: gap.word.replace(/[.,;:!?]$/, '') // Remove punctuation
-        }))
-        .slice(0, parseInt(numGaps));
-      
-      return NextResponse.json({ 
-        gaps: simpleGaps,
-        fallback: true
-      });
+    // Determine which test type to use based on methodId
+    let testType;
+    switch (methodId.toUpperCase()) {
+      case MethodId.A:
+        testType = 'contextuality';
+        break;
+      case MethodId.B:
+        testType = 'contextuality_plus';
+        break;
+      case MethodId.C:
+      case MethodId.D:
+        testType = 'keyword';
+        break;
+      default:
+        testType = 'contextuality';
     }
+    
+    // Get the cloze test data
+    if (!passage[testType]) {
+      return NextResponse.json(
+        { error: `Test type ${testType} not available for this passage` },
+        { status: 404 }
+      );
+    }
+    
+    const testData = passage[testType];
+    
+    // Format the gaps for the frontend
+    const gaps = testData.gaps.map(([word, startIdx, length]) => ({
+      word,
+      start_idx: startIdx,
+      end_idx: startIdx + length,
+      context: extractContext(testData.text, startIdx, startIdx + length)
+    }));
+    
+    return NextResponse.json({
+      gaps,
+      clozeText: testData.text
+    });
+    
   } catch (error) {
     console.error('Error in gap method API:', error);
     return NextResponse.json(
@@ -122,4 +93,13 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+// Helper function to extract context around the gap
+function extractContext(text: string, startIdx: number, endIdx: number): string {
+  const contextSize = 30;
+  const start = Math.max(0, startIdx - contextSize);
+  const end = Math.min(text.length, endIdx + contextSize);
+  
+  return text.substring(start, startIdx) + '_'.repeat(endIdx - startIdx) + text.substring(endIdx, end);
 }
