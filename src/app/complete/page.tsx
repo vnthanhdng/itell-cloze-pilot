@@ -11,7 +11,7 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'fire
 type MethodId = string;
 
 // Default methods to use if no test results are found
-const DEFAULT_METHODS = ['A', 'B', 'C'];
+const DEFAULT_METHODS = ['contextuality', 'contextuality_plus', 'keyword'];
 
 export default function CompletePage() {
   const router = useRouter();
@@ -71,26 +71,11 @@ export default function CompletePage() {
           // Normal case - extract methods from test results
           if (testResults && testResults.length > 0) {
             const methods = testResults.map(result => {
-              // Handle missing method
-              if (!result.method) return null;
-              
-              // Handle UI method IDs
-              if (result.method === 'A' || result.method === 'B' || result.method === 'C') {
-                return result.method;
-              }
-              
-              // Convert API method names to UI method IDs
-              const methodMap: Record<string, string> = {
-                'contextuality': 'A',
-                'contextuality_plus': 'B',
-                'keyword': 'C'
-              };
-              
-              return methodMap[result.method as string] || result.method as string;
+              return result.method || null;
             }).filter(Boolean); // Remove null values
             
             // Remove duplicates
-            const uniqueMethods = [...new Set(methods.filter((method): method is string => method !== null))];
+            const uniqueMethods = [...new Set(methods)];
             setCompletedMethods(uniqueMethods);
             
             // Check if they've completed requirements

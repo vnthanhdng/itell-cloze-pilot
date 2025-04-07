@@ -1,6 +1,6 @@
 import { updateUser, getUser } from './firebase';
-import { getNextTest, hasCompletedAllTests } from './counterbalance';
 import { User } from '../utils/types';
+import { isValidMethod } from '../utils/methodMapping';
 
 /**
  * Advances the user's progress to the next test
@@ -27,27 +27,18 @@ export const advanceUserProgress = async (uid: string) => {
       return { complete: true };
     }
     
-    // Get the next test information with method mapping
+    // Get the next test information
     const { passageId, method } = getNextTest(
       user.assignedPassages, 
       user.assignedMethods, 
       newProgress
     );
     
-    // Map API method to UI method ID if needed
-    const methodMap: Record<string, string> = {
-      'contextuality': 'A',
-      'contextuality_plus': 'B',
-      'keyword': 'C',
-    };
-    
-    const apiMethod = methodMap[method] || method;
-    
     return {
       complete: false,
       nextTest: {
         passageId,
-        apiMethod
+        apiMethod: method
       }
     };
   } catch (error) {
@@ -104,7 +95,7 @@ export const getUserProgressStats = async (uid: string) => {
       throw new Error('User not found');
     }
     
-    const totalTests = 4; // A, B, C, D
+    const totalTests = 3; // We use 3 tests per user
     const completedTests = user.progress;
     const progressPercentage = (completedTests / totalTests) * 100;
     
@@ -119,3 +110,72 @@ export const getUserProgressStats = async (uid: string) => {
     throw error;
   }
 };
+
+/**
+ * Check if user has completed all required tests
+ * @param progress Current progress count
+ * @returns boolean indicating if all tests are complete
+ */
+export const hasCompletedAllTests = (progress: number) => {
+  return progress >= 3; // 3 tests per user
+};
+
+/**
+ * Gets the next test for a user based on their progress
+ * @param assignedPassages Array of passage IDs
+ * @param assignedMethods Array of method names
+ * @param progress Current progress count
+ * @returns Object with passageId and method
+ */
+export const getNextTest = (
+  assignedPassages: number[] | undefined,
+  assignedMethods: string[] | undefined,
+  progress: number
+) => {
+  // Default method and passage if assignments are missing
+  if (!assignedPassages || assignedPassages.length === 0 ||
+      !assignedMethods || assignedMethods.length === 0) {
+    return { 
+      passageId: 1, 
+      method: 'contextuality' 
+    };
+  }
+  
+  // Ensure progress is within bounds
+  if (progress < 0) {
+    progress = 0;
+  }
+  
+  if (progress >= assignedPassages.length || progress >= assignedMethods.length) {
+    // User has completed all tests, return the last one
+    const lastIndex = Math.min(assignedPassages.length - 1, assignedMethods.length - 1);
+    return {
+      passageId: assignedPassages[lastIndex],
+      method: ensureValidMethod(assignedMethods[lastIndex])
+    };
+  }
+  
+  // Get the passage and method for the current progress level
+  return {
+    passageId: assignedPassages[progress],
+    method: ensureValidMethod(assignedMethods[progress])
+  };
+};
+
+/**
+ * Ensure the method is valid, fallback to 'contextuality' if not
+ */
+function ensureValidMethod(method: string): string {
+  if (isValidMethod(method)) {
+    return method;
+  }
+  
+  // Convert legacy method IDs if needed
+  const methodMap: Record<string, string> = {
+    'A': 'contextuality',
+    'B': 'contextuality_plus',
+    'C': 'keyword'
+  };
+  
+  return methodMap[method] || 'contextuality';
+}

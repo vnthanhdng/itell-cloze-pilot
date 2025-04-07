@@ -7,7 +7,7 @@ import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
 import AnnotationComponent from './Annotation';
-import { getMethodApiName } from '../utils/methodMapping'; 
+import { isValidMethod } from '../utils/methodMapping';
 
 interface ClozeTestProps {
   passage: string;
@@ -50,11 +50,16 @@ export default function ClozeTest({
   useEffect(() => {
     const loadGaps = async () => {
       try {
-        // Convert method ID (A, B, C) to API method name
-        // If this is undefined, we want the API to return an error
-        const apiMethod = getMethodApiName(method);
+        // Use the method name directly - no mapping needed anymore
+        // Just validate it's a valid method
+        const apiMethod = isValidMethod(method) ? method : 'contextuality';
         
         const response = await fetch(`/api/gap-methods/${apiMethod}?passageId=${passageId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to load test: ${response.status} ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.error) {
@@ -66,7 +71,7 @@ export default function ClozeTest({
         
         // Initialize user answers
         const initialAnswers: Record<string, string> = {};
-        data.gaps.forEach((gap, index) => {
+        data.gaps.forEach((gap: GapItem, index: number) => {
           initialAnswers[index] = '';
         });
         
@@ -168,8 +173,8 @@ export default function ClozeTest({
       ) as HTMLInputElement[];
 
       const targetInputs = inputs.filter(input => input.dataset.isTarget === "true");
-      const userInput = targetInputs.map(input => input.value).join('');
-      const isCorrect = userInput === word.slice(inputs.length - targetInputs.length);
+      const userInput = targetInputs.map(input => input.value.toLowerCase()).join('');
+      const isCorrect = userInput === word.toLowerCase();
 
       if (isCorrect) {
         correctWords++;

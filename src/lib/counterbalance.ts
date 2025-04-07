@@ -1,9 +1,10 @@
 import { getUser, updateUser, db } from './firebase';
 import { collection, getCountFromServer } from 'firebase/firestore';
+import { ClozeMethod, isValidMethod } from '../utils/methodMapping';
 
 // Define available passages and methods
 const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-const AVAILABLE_METHODS = ['A', 'B', 'C'];
+const AVAILABLE_METHODS: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
 
 /**
  * Randomly selects a combination of 3 passages and 3 methods
@@ -60,10 +61,10 @@ export const getNextTest = (
   const { passages, methods } = (!assignedPassages || assignedPassages.length === 0 ||
     !assignedMethods || assignedMethods.length === 0) ? 
     getRandomCombination() : 
-    { passages: assignedPassages, methods: assignedMethods };
+    { passages: assignedPassages, methods: assignedMethods as ClozeMethod[] };
   
   // Ensure progress is within bounds
-  if (progress < 0 || progress >= passages.length) {
+  if (progress < 0 || progress >= passages.length || progress >= methods.length) {
     console.error('Invalid progress value:', progress);
     // Default to first test if something's wrong
     return { passageId: passages[0], method: methods[0] };
@@ -73,16 +74,9 @@ export const getNextTest = (
   const passageId = passages[progress];
   const method = methods[progress];
   
-  // Convert method ID to API method if needed
-  const methodMap: Record<string, string> = {
-    'A': 'contextuality',
-    'B': 'contextuality_plus',
-    'C': 'keyword'
-  };
-  
   return {
     passageId,
-    method: methodMap[method] || method
+    method
   };
 };
 
@@ -98,19 +92,31 @@ export const forceUserAssignment = async (
     throw new Error(`Invalid passages: must provide exactly 3 passage IDs`);
   }
   
-  if (!customMethods || customMethods.length !== 3 || 
-      !customMethods.every(m => AVAILABLE_METHODS.includes(m))) {
-    throw new Error(`Invalid methods: must provide exactly 3 valid methods (A, B, C)`);
+  // Validate methods
+  if (!customMethods || customMethods.length !== 3) {
+    throw new Error(`Invalid methods: must provide exactly 3 method names`);
   }
+  
+  // Convert legacy method codes if needed
+  const convertedMethods = customMethods.map(m => {
+    if (isValidMethod(m)) return m;
+    
+    const methodMap: Record<string, ClozeMethod> = {
+      'A': 'contextuality',
+      'B': 'contextuality_plus',
+      'C': 'keyword'
+    };
+    return methodMap[m] || 'contextuality';
+  });
   
   await updateUser(userId, {
     assignedPassages: customPassages,
-    assignedMethods: customMethods,
+    assignedMethods: convertedMethods,
     progress: 0
   });
   
   return {
     assignedPassages: customPassages,
-    assignedMethods: customMethods
+    assignedMethods: convertedMethods
   };
 };

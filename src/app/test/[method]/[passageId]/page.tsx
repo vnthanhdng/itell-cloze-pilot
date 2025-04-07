@@ -1,15 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../../../lib/firebase';
-import { saveTestResult } from '../../../../lib/firebase';
-import { advanceUserProgress } from '../../../../lib/userProgress';
 import ReadingPassage from '../../../../components/ReadingPassage';
-import ClozeTest from '../../../../components/ClozeTest';
-import { GapItem } from '../../../../utils/types';
-import { getUIMethodCode } from '@/src/utils/methodMapping';
+
 enum TestStage {
   LOADING,
   IN_PROGRESS,
@@ -17,33 +13,43 @@ enum TestStage {
 }
 
 // This function runs on the client side
-export  default async function TestPage({
+export default function TestPage({
   params
 }: {
-  params: { method: string; passageId: string }
+  params: Promise<{ method: string; passageId: string }> | { method: string; passageId: string }
 }) {
   const router = useRouter();
   
-  // Extract method and passageId from the route params object directly
-  
-  const  method = await(params).method;
-  const passageId = parseInt(await(params).passageId, 10);
-  
-  // Log params for debugging (only in development)
-  console.log('TestPage params:', { 
-    method, 
-    passageId,
-    isApiMethod: ['contextuality', 'contextuality_plus', 'keyword'].includes(method)
-  });
-  const uiMethod = getUIMethodCode(method);
+  const [method, setMethod] = useState<string>('');
+  const [passageId, setPassageId] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [stage, setStage] = useState<TestStage>(TestStage.LOADING);
-
-  const [testId, setTestId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+
+  // Parse parameters
+  useEffect(() => {
+    const parseParams = async () => {
+      try {
+        // Handle params whether it's a Promise or direct object
+        const resolvedParams = (params instanceof Promise) 
+          ? await params 
+          : params;
+          
+        setMethod(resolvedParams.method);
+        setPassageId(parseInt(resolvedParams.passageId, 10));
+      } catch (err) {
+        console.error('Error parsing parameters:', err);
+        setError('Invalid test parameters. Please try again.');
+      }
+    };
+    
+    parseParams();
+  }, [params]);
 
   // Auth & initialization
   useEffect(() => {
+    if (!method || !passageId) return;
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
@@ -55,16 +61,17 @@ export  default async function TestPage({
     });
 
     return () => unsubscribe();
-  }, []);
-
-
+  }, [method, passageId, router]);
 
   // Handle test completion
   const handleTestComplete = async () => {
     if (!userId) return;
 
     try {
+      // Import and call advanceUserProgress here to avoid circular dependencies
+      const { advanceUserProgress } = await import('../../../../lib/userProgress');
       const progress = await advanceUserProgress(userId);
+      
       setStage(TestStage.COMPLETE);
       
       if (progress.complete) {
@@ -126,7 +133,7 @@ export  default async function TestPage({
       {/* Debug info - visible only in development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="bg-yellow-100 p-2 text-xs">
-          <p>Method: {uiMethod || 'Not set'}</p>
+          <p>Method: {method || 'Not set'}</p>
           <p>Passage ID: {passageId || 'Not set'}</p>
         </div>
       )}

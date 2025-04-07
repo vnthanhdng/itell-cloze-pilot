@@ -1,6 +1,13 @@
 import { collection, getCountFromServer, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import { assignUserTests, forceUserAssignment } from './counterbalance';
+import { 
+  assignUserTests, 
+  forceUserAssignment, 
+  forceUserAssignmentByIndices,
+  getMethodRotationByIndex,
+  getRandomPassageSet,
+  METHOD_ROTATIONS
+} from './counterbalance';
 
 // Define a type for the user data
 interface UserData {
@@ -54,38 +61,39 @@ export const getAssignmentDistribution = async () => {
       ...doc.data() 
     })) as (UserData & { id: string })[];
     
-    // Calculate assignment stats manually
-    const passageSets = [0, 0, 0, 0, 0]; // Count for each passage set
-    const methodRotations = [0, 0, 0, 0, 0, 0]; // Count for each method rotation
+    // For passages, track which ones are used most frequently
+    const passageCounts = {};
+    // Initialize counters for method rotations
+    const methodRotations = Array(METHOD_ROTATIONS.length).fill(0);
     const combinations = {};
     
     users.forEach(user => {
-      // If user has assigned passages, count them
-      if (user.assignedPassages) {
-        // Simple approach: determine which set by the first passage
-        const firstPassage = user.assignedPassages[0];
-        if (firstPassage === 1) passageSets[0]++;
-        else if (firstPassage === 2) passageSets[1]++;
-        else if (firstPassage === 3) passageSets[2]++;
-        else if (firstPassage === 4) passageSets[3]++;
-        else if (firstPassage === 5) passageSets[4]++;
+      // If user has assigned passages, count individual passages for distribution analysis
+      if (user.assignedPassages?.length > 0) {
+        user.assignedPassages.forEach(passageId => {
+          passageCounts[passageId] = (passageCounts[passageId] || 0) + 1;
+        });
       }
       
-      // If user has assigned methods, count them
-      if (user.assignedMethods && user.assignedMethods.length >= 3) {
-        const methods = user.assignedMethods.join('');
-        if (methods === 'ABC') methodRotations[0]++;
-        else if (methods === 'ACB') methodRotations[1]++;
-        else if (methods === 'BAC') methodRotations[2]++;
-        else if (methods === 'BCA') methodRotations[3]++;
-        else if (methods === 'CAB') methodRotations[4]++;
-        else if (methods === 'CBA') methodRotations[5]++;
+      // If user has assigned methods, count the rotation
+      if (user.assignedMethods?.length >= 3) {
+        const methodKey = user.assignedMethods.join('');
+        const rotationMap: {[key: string]: number} = {
+          'ABC': 0, 'ACB': 1, 'BAC': 2, 
+          'BCA': 3, 'CAB': 4, 'CBA': 5
+        };
+        
+        const rotationIndex = rotationMap[methodKey] !== undefined 
+          ? rotationMap[methodKey] 
+          : 0;
+          
+        methodRotations[rotationIndex]++;
       }
     });
     
     return {
       totalUsers: users.length,
-      passageSets,
+      passageCounts, // Individual passage distribution
       methodRotations,
       combinations,
       // Add completion stats
@@ -111,18 +119,19 @@ export const getOptimizedAssignment = async () => {
     // Get current distribution
     const distribution = await getAssignmentDistribution();
     
-    // Find the passage set with the fewest assignments
-    const minPassageSetIndex = distribution.passageSets.indexOf(
-      Math.min(...distribution.passageSets)
-    );
+    // For passages, we'll use random selection to maintain diversity
+    // So we don't need to find the optimal passage set index
     
     // Find the method rotation with the fewest assignments
     const minMethodRotationIndex = distribution.methodRotations.indexOf(
       Math.min(...distribution.methodRotations)
     );
     
+    // Generate a random seed value for passage selection
+    const randomSeed = Math.floor(Math.random() * 1000);
+    
     return {
-      passageSetIndex: minPassageSetIndex,
+      seedValue: randomSeed, // Just a random seed value, not actually used
       methodRotationIndex: minMethodRotationIndex
     };
   } catch (error) {
@@ -137,16 +146,17 @@ export const getOptimizedAssignment = async () => {
  */
 export const assignOptimizedContentToUser = async (userId: string) => {
   try {
-    // Get optimized assignment
-    const { passageSetIndex, methodRotationIndex } = await getOptimizedAssignment();
+    // Get optimized assignment indices
+    const { seedValue, methodRotationIndex } = await getOptimizedAssignment();
     
     console.log(`Optimized assignment for user ${userId}:`, {
-      passageSetIndex,
+      seedValue, // Just a random seed, not used for passage selection
       methodRotationIndex
     });
     
-    // Force this assignment
-    return await forceUserAssignment(userId, passageSetIndex, methodRotationIndex);
+    // Use the helper function that handles indices properly
+    // This will generate random passages but use balanced method rotations
+    return await forceUserAssignmentByIndices(userId, seedValue, methodRotationIndex);
   } catch (error) {
     console.error('Error assigning optimized content:', error);
     

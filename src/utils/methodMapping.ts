@@ -1,49 +1,35 @@
+
+export type ClozeMethod = 'contextuality' | 'contextuality_plus' | 'keyword';
+
 /**
- * Maps method IDs (A, B, C, D) to their corresponding API names
- * or maps method names to their API names
+ * Get a human-readable label for a method
  */
-export const getMethodApiName = (methodId: string): string => {
-    // If the method is already a full name, return it
-    if (['contextuality', 'contextuality_plus', 'keyword'].includes(methodId)) {
-      return methodId;
-    }
-    
-    // Map method IDs to their API names
-    const methodMap: Record<string, string> = {
-      'A': 'contextuality',
-      'B': 'contextuality_plus',
-      'C': 'keyword',
-    };
-    
-    return methodMap[methodId] || methodId;
+export const getMethodLabel = (method: string): string => {
+  const labels: Record<string, string> = {
+    'contextuality': 'Context-Based Gaps',
+    'contextuality_plus': 'Extended Context Gaps',
+    'keyword': 'Keyword-Based Gaps',
   };
   
-  /**
-   * Maps API method names to human-readable labels
-   */
-  export const getMethodLabel = (methodName: string): string => {
-    const labelMap: Record<string, string> = {
-      'contextuality': 'Contextuality-based Gaps',
-      'contextuality_plus': 'Enhanced Contextuality Gaps',
-      'keyword': 'Keyword-based Gaps',
-    
-      'A': 'Method A',
-      'B': 'Method B', 
-      'C': 'Method C',
-    };
-    
-    return labelMap[methodName] || 'Unknown Method';
+  return labels[method] || method;
+};
+
+/**
+ * Validate if a method name is valid
+ */
+export const isValidMethod = (method: string): method is ClozeMethod => {
+  return ['contextuality', 'contextuality_plus', 'keyword'].includes(method);
+};
+
+/**
+ * Get description for a method to explain to users
+ */
+export const getMethodDescription = (method: string): string => {
+  const descriptions: Record<string, string> = {
+    'contextuality': 'Gaps are chosen based on words that can be predicted from the immediate sentence context.',
+    'contextuality_plus': 'Gaps are chosen based on words that can be predicted from broader passage context.',
+    'keyword': 'Gaps are chosen based on key terms that are important to understand the text.',
   };
   
-  export const getUIMethodCode = (apiMethodName: string): string => {
-    const methodUIMap: Record<string, string> = {
-      'contextuality': 'A',
-      'contextuality_plus': 'B',
-      'keyword': 'C'
-    };
-    
-    // Check if the apiMethodName is a key in the methodUIMap
-    return apiMethodName in methodUIMap 
-      ? methodUIMap[apiMethodName as keyof typeof methodUIMap] 
-      : apiMethodName;
-  };
+  return descriptions[method] || 'A method for generating fill-in-the-blank tests.';
+};

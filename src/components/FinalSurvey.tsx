@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { getMethodLabel } from '../utils/methodMapping';
 
 type MethodId = string;
 
@@ -25,13 +26,6 @@ interface DraggableMethodProps {
   moveMethod: (dragIndex: number, hoverIndex: number) => void;
 }
 
-// Display names for the methods
-const methodNames: Record<string, string> = {
-  'A': 'Contextual Blanks',
-  'B': 'Extended Contextual Blanks',
-  'C': 'Keyword Blanks'
-};
-
 // Draggable method component for ranking
 const DraggableMethod: React.FC<DraggableMethodProps> = ({ methodId, index, moveMethod }) => {
   const [{ isDragging }, drag] = useDrag({
@@ -53,8 +47,8 @@ const DraggableMethod: React.FC<DraggableMethodProps> = ({ methodId, index, move
     }
   });
 
-  // Get friendly method name or default to "Method X"
-  const displayName = methodNames[methodId] || `Method ${methodId}`;
+  // Get the readable method name using the utility function
+  const displayName = getMethodLabel(methodId);
 
   return (
     <div
@@ -207,7 +201,7 @@ export default function FinalSurvey({ completedMethods, onComplete }: FinalSurve
                     onChange={() => setMostEngaging(method)}
                     className="sr-only"
                   />
-                  <span>{methodNames[method] || `Method ${method}`}</span>
+                  <span>{getMethodLabel(method)}</span>
                 </label>
               ))}
             </div>
@@ -236,7 +230,7 @@ export default function FinalSurvey({ completedMethods, onComplete }: FinalSurve
                     onChange={() => setMostHelpful(method)}
                     className="sr-only"
                   />
-                  <span>{methodNames[method] || `Method ${method}`}</span>
+                  <span>{getMethodLabel(method)}</span>
                 </label>
               ))}
             </div>

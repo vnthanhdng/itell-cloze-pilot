@@ -28,8 +28,6 @@ export function WordItem({
 
   const letters = word.split("");
 
-  const revealedLetters = letters.slice(0, showLetter);
-  const hiddenLetters = letters.slice(showLetter);
   const focusInput = (index: number) => {
     if (inputRefs.current[index]) {
       inputRefs.current[index]?.focus();
@@ -38,11 +36,11 @@ export function WordItem({
 
   const handleNext = async (currentIndex: number) => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex < hiddenLetters.length) {
+    if (nextIndex < letters.length) {
       focusInput(nextIndex);
     }
 
-    if (nextIndex === hiddenLetters.length) {
+    if (nextIndex === letters.length) {
       // get the outer span wrapper
       let parent =
         inputRefs.current[currentIndex]?.parentElement?.parentElement;
@@ -128,47 +126,20 @@ export function WordItem({
           className
         )}
       >
-        {revealedLetters.map((letter, index) => (
-          <Letter
-            key={index}
-            letter={letter}
-            className="rounded-none px-1 py-1 first-of-type:rounded-l-md focus-visible:ring-1"
-          />
-        ))}
-
-        {hiddenLetters.map((letter, index) => (
+        {letters.map((letter, index) => (
           <LetterInput
-            className="rounded-none px-1 py-1 last-of-type:rounded-r-lg focus-visible:ring-1"
+            className="rounded-none px-1 py-1 first-of-type:rounded-l-md last-of-type:rounded-r-lg focus-visible:ring-1"
             letter={letter}
             key={index}
             ref={setInputRef(index)}
             onNext={() => handleNext(index)}
             onPrev={(clearPrev) => handlePrev(index, clearPrev)}
-            letterIndex={showLetter + index}
+            letterIndex={index}
+            isTarget={true}
           />
         ))}
       </fieldset>
     </span>
-  );
-}
-
-interface LetterProps {
-  letter: string;
-  className?: string;
-}
-
-function Letter({ letter, className }: LetterProps) {
-  return (
-    <Input
-      className={cn(
-        "size-7 bg-muted text-center text-base text-muted-foreground xl:text-lg",
-        className
-      )}
-      type="text"
-      defaultValue={letter}
-      data-is-target={false}
-      readOnly
-    />
   );
 }
 
@@ -179,6 +150,7 @@ interface LetterInputProps {
   onNext?: () => void;
   onPrev?: (clearPrev?: boolean) => void;
   letterIndex: number;
+  isTarget: boolean;
 }
 
 function LetterInput({
@@ -188,8 +160,10 @@ function LetterInput({
   ref,
   className,
   letterIndex,
+  isTarget,
 }: LetterInputProps) {
   const [, setIsCorrect] = useState<boolean | undefined>(undefined);
+  
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key == "ArrowLeft") {
       e.preventDefault();
@@ -228,8 +202,8 @@ function LetterInput({
   return (
     <Input
       required
-      data-is-target={true}
-      data-letter-index={letterIndex}
+      data-is-target={isTarget.toString()}
+      data-letter-index={letterIndex.toString()}
       ref={ref}
       type="text"
       maxLength={1}
