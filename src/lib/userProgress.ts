@@ -27,18 +27,27 @@ export const advanceUserProgress = async (uid: string) => {
       return { complete: true };
     }
     
-    // Get the next test information
+    // Get the next test information with method mapping
     const { passageId, method } = getNextTest(
       user.assignedPassages, 
       user.assignedMethods, 
       newProgress
     );
     
+    // Map API method to UI method ID if needed
+    const methodMap: Record<string, string> = {
+      'contextuality': 'A',
+      'contextuality_plus': 'B',
+      'keyword': 'C',
+    };
+    
+    const apiMethod = methodMap[method] || method;
+    
     return {
       complete: false,
       nextTest: {
         passageId,
-        method
+        apiMethod
       }
     };
   } catch (error) {

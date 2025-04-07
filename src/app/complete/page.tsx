@@ -3,9 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
-import { getUser, getTestResults, saveFinalSurvey } from '../../lib/firebase';
+import { auth, db } from '../../lib/firebase';
+import { getUser, getTestResults, saveFinalSurvey, updateUser } from '../../lib/firebase';
 import FinalSurvey from '../../components/FinalSurvey';
+import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
+
+type MethodId = string;
+
+// Default methods to use if no test results are found
+const DEFAULT_METHODS = ['A', 'B', 'C'];
 
 export default function CompletePage() {
   const router = useRouter();
@@ -13,46 +19,108 @@ export default function CompletePage() {
   const [showSurvey, setShowSurvey] = useState(false);
   const [completedMethods, setCompletedMethods] = useState<MethodId[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [generateFakeMethods, setGenerateFakeMethods] = useState(false);
 
   useEffect(() => {
+    if (hasCheckedStatus) return;
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Get user data to check if they've completed all tests
+          // Get user data
           const userData = await getUser(user.uid);
+          console.log('CompletePage - userData:', userData);
+          setUserData(userData);
           
           if (!userData) {
-            router.push('/');
+            console.log('CompletePage - No user data found');
+            setLoading(false);
+            setHasCheckedStatus(true);
             return;
           }
           
-          // Get test results to determine which methods they've completed
+          // Get test results
           const testResults = await getTestResults(user.uid);
+          console.log('CompletePage - testResults:', testResults);
           
-          // Extract the methods they've completed
-          const methods = testResults.map(result => result.methodId as MethodId);
-          setCompletedMethods(methods);
+          // SPECIAL CASE: If user has progress of 3 or more but no test results,
+          // we can handle this in two ways:
+          // 1. Show an error with a button to generate fake methods
+          // 2. Automatically use default methods
+          if (userData.progress >= 3 && (!testResults || testResults.length === 0)) {
+            console.log('CompletePage - Progress indicates completion but no test results found');
+            
+            if (generateFakeMethods) {
+              // Use default methods if user clicked the button to generate them
+              setCompletedMethods(DEFAULT_METHODS);
+              setShowSurvey(true);
+            } else {
+              // Show error with option to generate methods
+              setError(`Your progress indicates you've completed all tests, but no test results were found. 
+                      This might be due to a data storage issue. You can either return to complete the tests 
+                      again or continue to the survey with default options.`);
+            }
+            
+            setLoading(false);
+            setHasCheckedStatus(true);
+            return;
+          }
           
-          if (methods.length < 4) {
-            // They haven't completed all tests, redirect back
-            router.push('/');
+          // Normal case - extract methods from test results
+          if (testResults && testResults.length > 0) {
+            const methods = testResults.map(result => {
+              // Handle missing method
+              if (!result.method) return null;
+              
+              // Handle UI method IDs
+              if (result.method === 'A' || result.method === 'B' || result.method === 'C') {
+                return result.method;
+              }
+              
+              // Convert API method names to UI method IDs
+              const methodMap: Record<string, string> = {
+                'contextuality': 'A',
+                'contextuality_plus': 'B',
+                'keyword': 'C'
+              };
+              
+              return methodMap[result.method as string] || result.method as string;
+            }).filter(Boolean); // Remove null values
+            
+            // Remove duplicates
+            const uniqueMethods = [...new Set(methods)];
+            setCompletedMethods(uniqueMethods);
+            
+            // Check if they've completed requirements
+            if (userData.progress < 3 || uniqueMethods.length < 3) {
+              setError(`You need to complete more tests before accessing the final survey. 
+                      Progress: ${userData.progress}/3, Methods completed: ${uniqueMethods.length}/3`);
+            } else {
+              setShowSurvey(true);
+            }
           } else {
-            setShowSurvey(true);
+            // No test results found, normal flow
+            setError(`You need to complete the tests before accessing the final survey.
+                    Progress: ${userData.progress}/3, Methods completed: 0/3`);
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
-          setError('Failed to retrieve your test results. Please try again.');
+          setError(`Error retrieving your data: ${err.message}`);
         } finally {
           setLoading(false);
+          setHasCheckedStatus(true);
         }
       } else {
         // Not logged in
+        console.log('CompletePage - Not logged in, redirecting');
         router.push('/');
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [hasCheckedStatus, generateFakeMethods, router]);
 
   const handleSurveyComplete = async (results: {
     methodRanking: MethodId[];
@@ -67,6 +135,8 @@ export default function CompletePage() {
     }
 
     try {
+      console.log('CompletePage - Saving survey results:', results);
+      
       // Save the final survey
       await saveFinalSurvey({
         userId: user.uid,
@@ -77,8 +147,18 @@ export default function CompletePage() {
       setShowSurvey(false);
     } catch (err) {
       console.error('Error saving final survey:', err);
-      setError('Failed to save your survey responses. Please try again.');
+      setError(`Failed to save your survey responses: ${err.message}`);
     }
+  };
+
+  // Function to "repair" the test data by generating fake records
+  const handleRepairData = async () => {
+    setGenerateFakeMethods(true);
+  };
+
+  // Function to return to tests
+  const handleReturnToTests = () => {
+    router.push('/');
   };
 
   if (loading) {
@@ -95,13 +175,24 @@ export default function CompletePage() {
     return (
       <div className="max-w-3xl mx-auto p-4">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded"
-          >
-            Try Again
-          </button>
+          <p className="whitespace-pre-line">{error}</p>
+          <div className="flex flex-wrap gap-3 mt-4">
+            <button 
+              onClick={handleReturnToTests} 
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Return to Tests
+            </button>
+            
+            {userData && userData.progress >= 3 && (
+              <button 
+                onClick={handleRepairData} 
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Continue to Survey Anyway
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

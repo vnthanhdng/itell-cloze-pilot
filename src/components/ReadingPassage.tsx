@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ClozeTest from './ClozeTest';
+import { saveTestResult, auth } from '../lib/firebase';
 
 interface ReadingPassageProps {
   passageId: number;
@@ -39,7 +40,7 @@ export default function ReadingPassage({
     };
 
     loadPassage();
-  }, [passageId]);
+  }, [method, passageId]);
 
   // Timer functionality
   useEffect(() => {
@@ -75,8 +76,32 @@ export default function ReadingPassage({
     answers: Record<string, string>;
     annotations: Record<string, string>;
   }) => {
+    // Check if user is authenticated
+    if (!auth.currentUser) {
+      console.error("No authenticated user found");
+      // Handle not authenticated - perhaps redirect to login
+      return;
+    }
   
-    onComplete();
+    const userId = auth.currentUser.uid;
+    console.log("Test complete with results:", results);
+    
+    saveTestResult({
+      userId,
+      method,
+      passageId,
+      score: results.score,
+      timeSpent: results.timeSpent,
+      answers: results.answers,
+      annotations: results.annotations
+    }).then(() => {
+      console.log("Test result saved successfully");
+      onComplete();
+    }).catch(error => {
+      console.error("Error saving test result:", error);
+      // Show error message to user
+      alert("Failed to save your test results. Please try again or contact support.");
+    });
   };
 
   if (loading) {

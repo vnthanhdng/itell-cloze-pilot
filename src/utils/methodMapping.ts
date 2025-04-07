@@ -36,3 +36,13 @@ export const getMethodApiName = (methodId: string): string => {
     
     return labelMap[methodName] || 'Unknown Method';
   };
+
+  export const getUIMethodCode = (apiMethodName: string): string => {
+    const methodUIMap = {
+      'contextuality': 'A',
+      'contextuality_plus': 'B',
+      'keyword': 'C'
+    };
+    
+    return methodUIMap[apiMethodName] || apiMethodName;
+  };

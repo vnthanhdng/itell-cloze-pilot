@@ -9,7 +9,7 @@ import { advanceUserProgress } from '../../../../lib/userProgress';
 import ReadingPassage from '../../../../components/ReadingPassage';
 import ClozeTest from '../../../../components/ClozeTest';
 import { GapItem } from '../../../../utils/types';
-
+import { getUIMethodCode } from '@/src/utils/methodMapping';
 enum TestStage {
   LOADING,
   IN_PROGRESS,
@@ -25,16 +25,16 @@ export default function TestPage({
   const router = useRouter();
   
   // Extract method and passageId from the route params object directly
-  const unwrapped = use(params);
-  const { methodId } = unwrapped;
-  const method = methodId;
-  const passageIdNumber = parseInt(unwrapped.passageId, 10);
+  const  method = use(params).method;
+  const passageId = parseInt(use(params).passageId, 10);
   
   // Log params for debugging (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('TestPage params:', { unwrapped, method, passageIdNumber });
-  }
-  
+  console.log('TestPage params:', { 
+    method, 
+    passageId,
+    isApiMethod: ['contextuality', 'contextuality_plus', 'keyword'].includes(method)
+  });
+  const uiMethod = getUIMethodCode(method);
   const [userId, setUserId] = useState<string | null>(null);
   const [stage, setStage] = useState<TestStage>(TestStage.LOADING);
 
@@ -71,7 +71,7 @@ export default function TestPage({
         router.push('/complete');
       } else if (progress.nextTest) {
         // Go to the next test
-        router.push(`/test/${progress.nextTest.method}/${progress.nextTest.passageId}`);
+        router.push(`/test/${progress.nextTest.apiMethod}/${progress.nextTest.passageId}`);
       }
     } catch (err) {
       console.error('Error updating user progress:', err);
@@ -88,7 +88,7 @@ export default function TestPage({
       case TestStage.IN_PROGRESS:
         return (
           <ReadingPassage 
-            passageId={passageIdNumber}
+            passageId={passageId}
             method={method} 
             onComplete={handleTestComplete} 
           />
@@ -125,14 +125,14 @@ export default function TestPage({
       {/* Debug info - visible only in development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="bg-yellow-100 p-2 text-xs">
-          <p>Method: {method || 'Not set'}</p>
-          <p>Passage ID: {passageIdNumber || 'Not set'}</p>
+          <p>Method: {uiMethod || 'Not set'}</p>
+          <p>Passage ID: {passageId || 'Not set'}</p>
         </div>
       )}
       
       <header className="bg-gray-100 p-4 mb-6">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-xl font-bold">Test {passageIdNumber}</h1>
+          <h1 className="text-xl font-bold">Test {passageId}</h1>
           <p className="text-gray-600">
             Read the passage carefully and then complete the cloze test.
           </p>

@@ -41,6 +41,7 @@ export default function ClozeTest({
     answers: Array<{ word: string; isCorrect: boolean }>;
     score: number;
   } | null>(null);
+  const [showAnnotations, setShowAnnotations] = useState(false);
   
   const startTimeRef = useRef<Date>(new Date());
   const formRef = useRef<HTMLFormElement>(null);
@@ -87,6 +88,8 @@ export default function ClozeTest({
     if (results && uiState === "initial") {
       applyVisualFeedback();
       setUiState("showingAnswers");
+      // Show annotations after showing answers
+      setShowAnnotations(true);
     }
   }, [results, uiState]);
 
@@ -191,7 +194,7 @@ export default function ClozeTest({
     setResults({ answers, score });
 
     toast.info(
-      "Test finished, please take some time reviewing the correct answers before continuing"
+      "Test finished. First review the correct answers, then complete annotations before continuing."
     );
   };
 
@@ -203,24 +206,37 @@ export default function ClozeTest({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (annotationsComplete) {
-      const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
-      
-      // Convert answers to the format expected by onComplete
-      const answerMap: Record<string, string> = {};
-      results?.answers.forEach((item, index) => {
-        answerMap[index.toString()] = item.word;
-      });
-      
-      onComplete({
-        score: results?.score || 0,
-        timeSpent,
-        answers: answerMap,
-        annotations
-      });
-    } else if (!annotationsComplete) {
-      toast.error("Please complete all annotations before continuing.");
+    if (!results) {
+      toast.error("Please submit your answers first.");
+      return;
     }
+    
+    if (!annotationsComplete) {
+      toast.error("Please complete all annotations before continuing.");
+      return;
+    }
+    
+    const timeSpent = (new Date().getTime() - startTimeRef.current.getTime()) / 1000;
+    
+    // Convert answers to the format expected by onComplete
+    const answerMap: Record<string, string> = {};
+    results.answers.forEach((item, index) => {
+      answerMap[index.toString()] = item.word;
+    });
+    
+    console.log("Submitting test results:", {
+      score: results.score,
+      timeSpent,
+      answers: answerMap,
+      annotations
+    });
+    
+    onComplete({
+      score: results.score,
+      timeSpent,
+      answers: answerMap,
+      annotations
+    });
   };
 
   if (loading) {
@@ -278,28 +294,34 @@ export default function ClozeTest({
           {renderPassageWithGaps()}
         </div>
 
-  
-          <AnnotationComponent 
-            gaps={gaps} 
-            value={annotations}
-            onChange={handleAnnotationChange}
-            isComplete={annotationsComplete}
-            setIsComplete={setAnnotationsComplete}
-          />
-
+        {/* Only show annotations after answers are submitted */}
+        {showAnnotations && (
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold mb-3">
+              Now that you've seen the correct answers, please explain why each answer fits in the context:
+            </h3>
+            <AnnotationComponent 
+              gaps={gaps} 
+              value={annotations}
+              onChange={handleAnnotationChange}
+              isComplete={annotationsComplete}
+              setIsComplete={setAnnotationsComplete}
+            />
+          </div>
+        )}
         
         <div className="flex gap-4">
           {uiState === "initial" ? (
             <Button type="button" onClick={handleShowAnswers} className="w-48">
               <span className="inline-flex items-center gap-2">
                 <SendHorizontalIcon className="size-3" />
-                Show Answers
+                Submit Answers
               </span>
             </Button>
           ) : (
             <Button
               type="submit"
-              disabled={uiState === "showingAnswers"}
+              disabled={uiState === "showingAnswers" || !annotationsComplete}
               className="w-48"
             >
               <span className="inline-flex items-center gap-2">
@@ -317,7 +339,7 @@ export default function ClozeTest({
             </p>
            {!annotationsComplete && (
               <p className="text-blue-700 mt-2">
-                Please complete the annotations for all gaps below before continuing.
+                Now please complete the annotations explaining why each answer fits in the context.
               </p>
             )}
           </div>

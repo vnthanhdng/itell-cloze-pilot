@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { TestResult, SurveyResponse, FinalSurvey, MethodId } from '../../utils/types';
+import { TestResult, FinalSurvey } from '../../utils/types';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
+
   const [finalSurveys, setFinalSurveys] = useState<FinalSurvey[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,13 +42,6 @@ export default function DashboardPage() {
       })) as TestResult[];
       setTestResults(testResultsData);
 
-      // Get all survey responses
-      const surveyResponsesSnapshot = await getDocs(collection(db, 'surveyResponses'));
-      const surveyResponsesData = surveyResponsesSnapshot.docs.map(doc => ({
-        responseId: doc.id,
-        ...doc.data()
-      })) as SurveyResponse[];
-      setSurveyResponses(surveyResponsesData);
 
       // Get all final surveys
       const finalSurveysSnapshot = await getDocs(collection(db, 'finalSurveys'));
@@ -90,27 +83,13 @@ export default function DashboardPage() {
 
     // Calculate average scores
     methods.forEach(method => {
-      const methodResults = testResults.filter(result => result.methodId === method);
+      const methodResults = testResults.filter(result => result.method === method);
       if (methodResults.length > 0) {
         methodStats[method].averageScore = methodResults.reduce((sum, result) => sum + result.score, 0) / methodResults.length;
         methodStats[method].count = methodResults.length;
       }
 
-      // Get survey responses for this method
-      const methodSurveys = surveyResponses.filter(response => response.methodId === method);
-      if (methodSurveys.length > 0) {
-        methodStats[method].averageDifficulty = methodSurveys.reduce((sum, survey) => 
-          sum + survey.responses.difficulty, 0) / methodSurveys.length;
-        
-        methodStats[method].averageEngagement = methodSurveys.reduce((sum, survey) => 
-          sum + survey.responses.engagement, 0) / methodSurveys.length;
-        
-        methodStats[method].averageHelpfulness = methodSurveys.reduce((sum, survey) => 
-          sum + survey.responses.helpfulness, 0) / methodSurveys.length;
-        
-        methodStats[method].averageLikelihood = methodSurveys.reduce((sum, survey) => 
-          sum + survey.responses.likelihood, 0) / methodSurveys.length;
-      }
+
     });
     
     return methodStats;
@@ -168,14 +147,10 @@ export default function DashboardPage() {
     // Test results CSV
     let testCsv = 'TestID,UserID,MethodID,PassageID,Score,TimeSpent,Timestamp\n';
     testResults.forEach(result => {
-      testCsv += `${result.testId},${result.userId},${result.methodId},${result.passageId},${result.score},${result.timeSpent},${result.timeStamp}\n`;
+      testCsv += `${result.testId},${result.userId},${result.method},${result.passageId},${result.score},${result.timeSpent},${result.timeStamp}\n`;
     });
     
-    // Survey responses CSV
-    let surveyCsv = 'ResponseID,UserID,TestID,MethodID,Difficulty,Engagement,Helpfulness,Likelihood,Comments,Timestamp\n';
-    surveyResponses.forEach(response => {
-      surveyCsv += `${response.responseId},${response.userId},${response.testId},${response.methodId},${response.responses.difficulty},${response.responses.engagement},${response.responses.helpfulness},${response.responses.likelihood},"${response.comments || ''}",${response.timestamp}\n`;
-    });
+  
     
     // Final surveys CSV
     let finalCsv = 'UserID,Rank1,Rank2,Rank3,Rank4,MostEngaging,MostHelpful,Feedback,Timestamp\n';
@@ -197,7 +172,7 @@ export default function DashboardPage() {
     };
     
     download(testCsv, 'test-results.csv');
-    download(surveyCsv, 'survey-responses.csv');
+  
     download(finalCsv, 'final-surveys.csv');
   };
 

@@ -33,11 +33,17 @@ import {
 import { User, TestResult, FinalSurvey } from "../utils/types";
 
 // User functions
-export const createUser = async (uid: string, userData: Partial<User>) => {
-  await setDoc(doc(db, "users", uid), {
-    ...userData,
-    startTime: serverTimestamp(),
-  });
+export const createUser = async (uid: string, userData: any) => {
+  try {
+    await setDoc(doc(db, "users", uid), {
+      ...userData,
+      startTime: serverTimestamp(),
+    });
+    console.log("User document created successfully for:", uid);
+  } catch (error) {
+    console.error("Error creating user document:", error);
+    throw error;
+  }
 };
 
 export const getUser = async (uid: string) => {
@@ -49,15 +55,63 @@ export const updateUser = async (uid: string, data: Partial<User>) => {
   await updateDoc(doc(db, "users", uid), data);
 };
 
-// Test results functions
+// Updated saveTestResult function with better error handling and data validation
 export const saveTestResult = async (
   testResult: Omit<TestResult, "testId" | "timestamp">
 ) => {
-  const docRef = await addDoc(collection(db, "testResults"), {
-    ...testResult,
-    timestamp: serverTimestamp(),
-  });
-  return docRef.id;
+  try {
+    // Check for userId
+    if (!testResult.userId) {
+      throw new Error("Missing userId in test result");
+    }
+    
+    // Validate other required fields
+    if (
+      testResult.method === undefined ||
+      testResult.passageId === undefined ||
+      testResult.score === undefined ||
+      testResult.timeSpent === undefined
+    ) {
+      throw new Error("Missing required fields in test result");
+    }
+    
+    // Ensure answers and annotations are serializable
+    // Convert any complex objects to strings if needed
+    const serializedResult = {
+      ...testResult,
+      // Ensure answers and annotations are simple objects with string values
+      answers: Object.fromEntries(
+        Object.entries(testResult.answers || {}).map(([k, v]) => [k, String(v)])
+      ),
+      annotations: Object.fromEntries(
+        Object.entries(testResult.annotations || {}).map(([k, v]) => [k, String(v)])
+      ),
+      timestamp: serverTimestamp(),
+    };
+    
+    // For debugging
+    console.log("Saving test result:", JSON.stringify(serializedResult, null, 2));
+    
+    // Create the collection if it doesn't exist by adding the document
+    const docRef = await addDoc(collection(db, "testResults"), serializedResult);
+    
+    console.log("Test result saved with ID:", docRef.id);
+    return docRef.id;
+  } catch (error) {
+    // More detailed error logging
+    console.error("Error saving test result:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    
+    // Check for Firebase-specific errors
+    if ('code' in (error as any)) {
+      console.error("Firebase error code:", (error as any).code);
+    }
+    
+    throw error;
+  }
 };
 
 export const getTestResults = async (userId: string) => {
