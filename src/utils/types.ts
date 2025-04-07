@@ -8,6 +8,7 @@ export interface User {
   progress: number; // from 0 to 3
   startTime: Date;
   endTime?: Date;
+
 }
 
 export interface Demographics {

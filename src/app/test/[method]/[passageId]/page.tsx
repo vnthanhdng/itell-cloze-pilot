@@ -17,7 +17,7 @@ enum TestStage {
 }
 
 // This function runs on the client side
-export default function TestPage({
+export  default async function TestPage({
   params
 }: {
   params: { method: string; passageId: string }
@@ -25,8 +25,9 @@ export default function TestPage({
   const router = useRouter();
   
   // Extract method and passageId from the route params object directly
-  const  method = use(params).method;
-  const passageId = parseInt(use(params).passageId, 10);
+  
+  const  method = await(params).method;
+  const passageId = parseInt(await(params).passageId, 10);
   
   // Log params for debugging (only in development)
   console.log('TestPage params:', { 

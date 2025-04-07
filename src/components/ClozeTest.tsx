@@ -7,7 +7,7 @@ import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
 import AnnotationComponent from './Annotation';
-import { getMethodApiName } from '../utils/methodMapping'; // Import the utility function
+import { getMethodApiName } from '../utils/methodMapping'; 
 
 interface ClozeTestProps {
   passage: string;

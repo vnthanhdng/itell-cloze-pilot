@@ -1,55 +1,43 @@
-import { getUser, updateUser } from './firebase';
+import { getUser, updateUser, db } from './firebase';
+import { collection, getCountFromServer } from 'firebase/firestore';
 
-// Define the passage sets
-const PASSAGE_SETS = [
-  [1, 6, 11],   // Set 1
-  [2, 7, 12],   // Set 2
-  [3, 8, 13],   // Set 3
-  [4, 9, 14],   // Set 4
-  [5, 10, 15]   // Set 5
-];
+// Define available passages and methods
+const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const AVAILABLE_METHODS = ['A', 'B', 'C'];
 
-// Define the method rotation
-const METHOD_ROTATIONS = [
-  ['A', 'B', 'C'],  // Rotation 1
-  ['A', 'C', 'B'],  // Rotation 2
-  ['B', 'A', 'C'],  // Rotation 3
-  ['B', 'C', 'A'],  // Rotation 4
-  ['C', 'A', 'B'],  // Rotation 5
-  ['C', 'B', 'A']   // Rotation 6
-];
-
-// Default passages and methods if none are assigned
-const DEFAULT_PASSAGES = [1, 6, 11];
-const DEFAULT_METHODS = ['A', 'B', 'C'];
+/**
+ * Randomly selects a combination of 3 passages and 3 methods
+ * Ensures no duplicates in the selections
+ */
+export const getRandomCombination = () => {
+  // Shuffle available passages and pick the first 3
+  const shuffledPassages = [...AVAILABLE_PASSAGES].sort(() => Math.random() - 0.5);
+  const passages = shuffledPassages.slice(0, 3);
+  
+  // Generate a random method combination (ensuring each method is used once)
+  const shuffledMethods = [...AVAILABLE_METHODS].sort(() => Math.random() - 0.5);
+  const methods = shuffledMethods;
+  
+  console.log(`Random combination: passages=${passages}, methods=${methods}`);
+  
+  return { passages, methods };
+};
 
 /**
  * Assigns passages and methods to a new user
- * Uses a counter-balancing approach to ensure even distribution
+ * Uses purely random assignments
  */
 export const assignUserTests = async () => {
   try {
-    // Get the total number of users to determine the assignment pattern
-    // This is a simplified version - in a real app, you would count users in Firestore
-    const userCount = Math.floor(Math.random() * 30); // Simulate random user count for testing
-    
-    // Calculate which passage set and method rotation to assign
-    const passageSetIndex = userCount % PASSAGE_SETS.length;
-    const methodRotationIndex = userCount % METHOD_ROTATIONS.length;
-    
-    const passages = PASSAGE_SETS[passageSetIndex];
-    const methods = METHOD_ROTATIONS[methodRotationIndex];
-    
+    // Generate random combination
+    const { passages, methods } = getRandomCombination();
     console.log(`Assigned: passages=${passages}, methods=${methods}`);
     
     return { passages, methods };
   } catch (error) {
     console.error('Error assigning user tests:', error);
-    // Return defaults in case of error
-    return { 
-      passages: DEFAULT_PASSAGES, 
-      methods: DEFAULT_METHODS 
-    };
+    // Try one more time if there's an error
+    return getRandomCombination();
   }
 };
 
@@ -68,14 +56,11 @@ export const getNextTest = (
   assignedMethods: string[] | undefined,
   progress: number
 ) => {
-  // Safety check: handle undefined or empty arrays
-  const passages = assignedPassages && assignedPassages.length > 0 
-    ? assignedPassages 
-    : DEFAULT_PASSAGES;
-  
-  const methods = assignedMethods && assignedMethods.length > 0 
-    ? assignedMethods 
-    : DEFAULT_METHODS;
+  // Safety check: handle undefined or empty arrays with random assignment
+  const { passages, methods } = (!assignedPassages || assignedPassages.length === 0 ||
+    !assignedMethods || assignedMethods.length === 0) ? 
+    getRandomCombination() : 
+    { passages: assignedPassages, methods: assignedMethods };
   
   // Ensure progress is within bounds
   if (progress < 0 || progress >= passages.length) {
@@ -102,34 +87,30 @@ export const getNextTest = (
 };
 
 /**
- * Force a specific assignment for testing purposes
+ * Force specific passages and methods for testing purposes
  */
 export const forceUserAssignment = async (
   userId: string, 
-  passageSetIndex: number, 
-  methodRotationIndex: number
+  customPassages: number[], 
+  customMethods: string[]
 ) => {
-  if (passageSetIndex < 0 || passageSetIndex >= PASSAGE_SETS.length) {
-    throw new Error(`Invalid passage set index: ${passageSetIndex}`);
+  if (!customPassages || customPassages.length !== 3) {
+    throw new Error(`Invalid passages: must provide exactly 3 passage IDs`);
   }
   
-  if (methodRotationIndex < 0 || methodRotationIndex >= METHOD_ROTATIONS.length) {
-    throw new Error(`Invalid method rotation index: ${methodRotationIndex}`);
+  if (!customMethods || customMethods.length !== 3 || 
+      !customMethods.every(m => AVAILABLE_METHODS.includes(m))) {
+    throw new Error(`Invalid methods: must provide exactly 3 valid methods (A, B, C)`);
   }
-  
-  const assignedPassages = PASSAGE_SETS[passageSetIndex];
-  const assignedMethods = METHOD_ROTATIONS[methodRotationIndex];
   
   await updateUser(userId, {
-    assignedPassages,
-    assignedMethods,
-    passageSetIndex,
-    methodRotationIndex,
+    assignedPassages: customPassages,
+    assignedMethods: customMethods,
     progress: 0
   });
   
   return {
-    assignedPassages,
-    assignedMethods
+    assignedPassages: customPassages,
+    assignedMethods: customMethods
   };
 };

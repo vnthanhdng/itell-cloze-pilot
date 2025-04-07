@@ -42,7 +42,6 @@ export default function DashboardPage() {
       })) as TestResult[];
       setTestResults(testResultsData);
 
-
       // Get all final surveys
       const finalSurveysSnapshot = await getDocs(collection(db, 'finalSurveys'));
       const finalSurveysData = finalSurveysSnapshot.docs.map(doc => ({
@@ -86,10 +85,16 @@ export default function DashboardPage() {
       const methodResults = testResults.filter(result => result.method === method);
       if (methodResults.length > 0) {
         methodStats[method].averageScore = methodResults.reduce((sum, result) => sum + result.score, 0) / methodResults.length;
+        
+        // Add calculations for other metrics if they exist in your data
+        // For example:
+        // methodStats[method].averageDifficulty = methodResults.reduce((sum, result) => sum + result.difficulty, 0) / methodResults.length;
+        // methodStats[method].averageEngagement = methodResults.reduce((sum, result) => sum + result.engagement, 0) / methodResults.length;
+        // methodStats[method].averageHelpfulness = methodResults.reduce((sum, result) => sum + result.helpfulness, 0) / methodResults.length;
+        // methodStats[method].averageLikelihood = methodResults.reduce((sum, result) => sum + result.likelihood, 0) / methodResults.length;
+        
         methodStats[method].count = methodResults.length;
       }
-
-
     });
     
     return methodStats;
@@ -150,8 +155,6 @@ export default function DashboardPage() {
       testCsv += `${result.testId},${result.userId},${result.method},${result.passageId},${result.score},${result.timeSpent},${result.timeStamp}\n`;
     });
     
-  
-    
     // Final surveys CSV
     let finalCsv = 'UserID,Rank1,Rank2,Rank3,Rank4,MostEngaging,MostHelpful,Feedback,Timestamp\n';
     finalSurveys.forEach(survey => {
@@ -172,7 +175,6 @@ export default function DashboardPage() {
     };
     
     download(testCsv, 'test-results.csv');
-  
     download(finalCsv, 'final-surveys.csv');
   };
 

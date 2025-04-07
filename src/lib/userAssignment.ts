@@ -2,6 +2,14 @@ import { collection, getCountFromServer, doc, getDoc, setDoc, query, orderBy, li
 import { db } from './firebase';
 import { assignUserTests, forceUserAssignment } from './counterbalance';
 
+// Define a type for the user data
+interface UserData {
+  assignedPassages?: number[];
+  assignedMethods?: string[];
+  progress?: number;
+  [key: string]: any; // For any other fields that might be in the document
+}
+
 /**
  * Assigns passages and methods to a new user during registration
  * This function should be called when a new user is created
@@ -44,7 +52,7 @@ export const getAssignmentDistribution = async () => {
     const users = usersSnapshot.docs.map(doc => ({ 
       id: doc.id, 
       ...doc.data() 
-    }));
+    })) as (UserData & { id: string })[];
     
     // Calculate assignment stats manually
     const passageSets = [0, 0, 0, 0, 0]; // Count for each passage set
@@ -83,8 +91,8 @@ export const getAssignmentDistribution = async () => {
       // Add completion stats
       completion: {
         notStarted: users.filter(user => user.progress === 0).length,
-        inProgress: users.filter(user => user.progress > 0 && user.progress < 3).length,
-        completed: users.filter(user => user.progress >= 3).length
+        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 3).length,
+        completed: users.filter(user => (user.progress ?? 0) >= 3).length
       }
     };
   } catch (error) {

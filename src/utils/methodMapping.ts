@@ -13,7 +13,6 @@ export const getMethodApiName = (methodId: string): string => {
       'A': 'contextuality',
       'B': 'contextuality_plus',
       'C': 'keyword',
-
     };
     
     return methodMap[methodId] || methodId;
@@ -31,18 +30,20 @@ export const getMethodApiName = (methodId: string): string => {
       'A': 'Method A',
       'B': 'Method B', 
       'C': 'Method C',
- 
     };
     
     return labelMap[methodName] || 'Unknown Method';
   };
-
+  
   export const getUIMethodCode = (apiMethodName: string): string => {
-    const methodUIMap = {
+    const methodUIMap: Record<string, string> = {
       'contextuality': 'A',
       'contextuality_plus': 'B',
       'keyword': 'C'
     };
     
-    return methodUIMap[apiMethodName] || apiMethodName;
+    // Check if the apiMethodName is a key in the methodUIMap
+    return apiMethodName in methodUIMap 
+      ? methodUIMap[apiMethodName as keyof typeof methodUIMap] 
+      : apiMethodName;
   };

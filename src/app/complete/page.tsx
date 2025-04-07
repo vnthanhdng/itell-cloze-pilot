@@ -90,7 +90,7 @@ export default function CompletePage() {
             }).filter(Boolean); // Remove null values
             
             // Remove duplicates
-            const uniqueMethods = [...new Set(methods)];
+            const uniqueMethods = [...new Set(methods.filter((method): method is string => method !== null))];
             setCompletedMethods(uniqueMethods);
             
             // Check if they've completed requirements
