@@ -31,7 +31,7 @@ export default function HomePage() {
             // User has completed all tests
             router.push('/complete');
           } else if (progress.currentTest) {
-            // Redirect to current test
+            // Redirect to current test with standardized method name
             router.push(`/test/${progress.currentTest.method}/${progress.currentTest.passageId}`);
           }
         } catch (err) {
@@ -50,8 +50,9 @@ export default function HomePage() {
   }, [router]);
 
   const handleRegistrationComplete = (uid: string) => {
-    // Redirect to first test
-    router.push('/test/A/1'); // Default first test, will be overridden by counterbalancing
+    // Let the system determine the first test URL from the counterbalancing
+    // No hardcoded redirect to /test/A/1 anymore
+    router.push('/test'); // This will redirect to the appropriate test
   };
 
   if (loading) {

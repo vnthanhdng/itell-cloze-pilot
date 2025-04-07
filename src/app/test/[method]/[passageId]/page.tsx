@@ -40,8 +40,9 @@ export default function TestPage({
           passageIdValue = resolvedParams.passageId;
         } else if (typeof params === 'object' && params !== null) {
           // If it's a regular object
-          methodValue = params.method;
-          passageIdValue = params.passageId;
+          const resolvedParams = params;
+          methodValue = resolvedParams.method;
+          passageIdValue = resolvedParams.passageId;
         } else {
           throw new Error('Invalid params format');
         }
@@ -50,8 +51,8 @@ export default function TestPage({
           throw new Error('Missing required parameters');
         }
           
-        setMethod(params.method);
-        setPassageId(parseInt(params.passageId, 10));
+        setMethod(methodValue);
+        setPassageId(parseInt(passageIdValue, 10));
       } catch (err) {
         console.error('Error parsing parameters:', err);
         setError('Invalid test parameters. Please try again.');

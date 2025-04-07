@@ -1,6 +1,6 @@
 import { updateUser, getUser } from './firebase';
 import { User } from '../utils/types';
-import { isValidMethod } from '../utils/methodMapping';
+import { isValidMethod, convertToStandardMethod } from '../utils/methodMapping';
 
 /**
  * Advances the user's progress to the next test
@@ -151,31 +151,13 @@ export const getNextTest = (
     const lastIndex = Math.min(assignedPassages.length - 1, assignedMethods.length - 1);
     return {
       passageId: assignedPassages[lastIndex],
-      method: ensureValidMethod(assignedMethods[lastIndex])
+      method: convertToStandardMethod(assignedMethods[lastIndex])
     };
   }
   
   // Get the passage and method for the current progress level
   return {
     passageId: assignedPassages[progress],
-    method: ensureValidMethod(assignedMethods[progress])
+    method: convertToStandardMethod(assignedMethods[progress])
   };
 };
-
-/**
- * Ensure the method is valid, fallback to 'contextuality' if not
- */
-function ensureValidMethod(method: string): string {
-  if (isValidMethod(method)) {
-    return method;
-  }
-  
-  // Convert legacy method IDs if needed
-  const methodMap: Record<string, string> = {
-    'A': 'contextuality',
-    'B': 'contextuality_plus',
-    'C': 'keyword'
-  };
-  
-  return methodMap[method] || 'contextuality';
-}

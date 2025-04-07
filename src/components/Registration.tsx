@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { createUser } from '../lib/firebase';
 import { assignUserTests } from '../lib/counterbalance';
+import { convertToStandardMethod } from '../utils/methodMapping';
 
 interface RegistrationProps {
   onComplete: (uid: string) => void;
@@ -34,6 +35,9 @@ export default function Registration({ onComplete }: RegistrationProps) {
       console.log('Getting test assignments...');
       const { passages, methods } = await assignUserTests();
       console.log('Assignments:', { passages, methods });
+      
+      // Ensure methods use standardized names
+      const standardizedMethods = methods.map(m => convertToStandardMethod(m));
 
       // Create the user document in Firestore
       console.log('Creating user document...');
@@ -42,7 +46,7 @@ export default function Registration({ onComplete }: RegistrationProps) {
         name,
         email,
         assignedPassages: passages,
-        assignedMethods: methods,
+        assignedMethods: standardizedMethods, // Use standardized method names
         progress: 0,
         startTime: new Date()
       });

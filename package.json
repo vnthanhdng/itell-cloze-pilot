@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "extract-passages": "ts-node scripts/extract-passages.ts"
+    "extract-passages": "ts-node scripts/extract-passages.ts",
+    "export": "next export",
+  "deploy": "next build && next export && firebase deploy"
   },
   "keywords": [],
   "author": "",

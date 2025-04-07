@@ -1,19 +1,20 @@
 import { getUser, updateUser, db } from './firebase';
 import { collection, getCountFromServer } from 'firebase/firestore';
-import { ClozeMethod, isValidMethod } from '../utils/methodMapping';
+import { ClozeMethod, isValidMethod, convertToStandardMethod } from '../utils/methodMapping';
 
 // Define available passages and methods
 const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 const AVAILABLE_METHODS: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
 
 // Define all possible method rotations for balanced assignment
+// Using proper method names instead of A, B, C codes
 export const METHOD_ROTATIONS: ClozeMethod[][] = [
-  ['contextuality', 'contextuality_plus', 'keyword'],       // ABC
-  ['contextuality', 'keyword', 'contextuality_plus'],       // ACB
-  ['contextuality_plus', 'contextuality', 'keyword'],       // BAC
-  ['contextuality_plus', 'keyword', 'contextuality'],       // BCA
-  ['keyword', 'contextuality', 'contextuality_plus'],       // CAB
-  ['keyword', 'contextuality_plus', 'contextuality']        // CBA
+  ['contextuality', 'contextuality_plus', 'keyword'],       // Previously ABC
+  ['contextuality', 'keyword', 'contextuality_plus'],       // Previously ACB
+  ['contextuality_plus', 'contextuality', 'keyword'],       // Previously BAC
+  ['contextuality_plus', 'keyword', 'contextuality'],       // Previously BCA
+  ['keyword', 'contextuality', 'contextuality_plus'],       // Previously CAB
+  ['keyword', 'contextuality_plus', 'contextuality']        // Previously CBA
 ];
 
 /**
@@ -107,7 +108,11 @@ export const getNextTest = (
   const { passages, methods } = (!assignedPassages || assignedPassages.length === 0 ||
     !assignedMethods || assignedMethods.length === 0) ? 
     getRandomCombination() : 
-    { passages: assignedPassages, methods: assignedMethods as ClozeMethod[] };
+    { 
+      passages: assignedPassages, 
+      // Convert any legacy method codes to standardized names
+      methods: assignedMethods.map(m => convertToStandardMethod(m))
+    };
   
   // Ensure progress is within bounds
   if (progress < 0) {
@@ -144,17 +149,8 @@ export const forceUserAssignment = async (
     throw new Error(`Invalid methods: must provide exactly 3 method names`);
   }
   
-  // Convert legacy method codes if needed
-  const convertedMethods = customMethods.map(m => {
-    if (isValidMethod(m)) return m;
-    
-    const methodMap: Record<string, ClozeMethod> = {
-      'A': 'contextuality',
-      'B': 'contextuality_plus',
-      'C': 'keyword'
-    };
-    return methodMap[m] || 'contextuality';
-  });
+  // Convert any legacy method codes to standardized names
+  const convertedMethods = customMethods.map(m => convertToStandardMethod(m));
   
   await updateUser(userId, {
     assignedPassages: customPassages,
