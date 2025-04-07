@@ -75,7 +75,7 @@ export default function CompletePage() {
             }).filter(Boolean); // Remove null values
             
             // Remove duplicates
-            const uniqueMethods = [...new Set(methods)];
+            const uniqueMethods = [...new Set(methods.filter((method): method is string => method !== null))];
             setCompletedMethods(uniqueMethods);
             
             // Check if they've completed requirements
@@ -92,7 +92,8 @@ export default function CompletePage() {
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
-          setError(`Error retrieving your data: ${err.message}`);
+          const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+          setError(`Error retrieving your data: ${errorMessage}`);
         } finally {
           setLoading(false);
           setHasCheckedStatus(true);
@@ -132,7 +133,8 @@ export default function CompletePage() {
       setShowSurvey(false);
     } catch (err) {
       console.error('Error saving final survey:', err);
-      setError(`Failed to save your survey responses: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(`Failed to save your survey responses: ${errorMessage}`);
     }
   };
 

@@ -287,7 +287,7 @@ export default function ClozeTest({
         </AlertDescription>
       </Alert>
       
-      {error && <Errorbox title={error.message} />}
+      {error && <Errorbox title={error} />}
 
       <form
         id="cloze-form"

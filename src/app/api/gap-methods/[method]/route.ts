@@ -60,7 +60,7 @@ export async function GET(
     const testData = passage[testType];
     
     // Format the gaps for the frontend
-    const gaps = testData.gaps.map(([word, startIdx, length]) => ({
+    const gaps = testData.gaps.map(([word, startIdx, length]: [string, number, number]) => ({
       word,
       start_idx: startIdx,
       end_idx: startIdx + length,

@@ -16,7 +16,7 @@ enum TestStage {
 export default function TestPage({
   params
 }: {
-  params: Promise<{ method: string; passageId: string }> | { method: string; passageId: string }
+  params:  any
 }) {
   const router = useRouter();
   
@@ -30,13 +30,28 @@ export default function TestPage({
   useEffect(() => {
     const parseParams = async () => {
       try {
-        // Handle params whether it's a Promise or direct object
-        const resolvedParams = (params instanceof Promise) 
-          ? await params 
-          : params;
+        let methodValue: string;
+        let passageIdValue: string;
+
+        if (params instanceof Promise) {
+          // If it's a Promise
+          const resolvedParams = await params;
+          methodValue = resolvedParams.method;
+          passageIdValue = resolvedParams.passageId;
+        } else if (typeof params === 'object' && params !== null) {
+          // If it's a regular object
+          methodValue = params.method;
+          passageIdValue = params.passageId;
+        } else {
+          throw new Error('Invalid params format');
+        }
+
+        if (!methodValue || !passageIdValue) {
+          throw new Error('Missing required parameters');
+        }
           
-        setMethod(resolvedParams.method);
-        setPassageId(parseInt(resolvedParams.passageId, 10));
+        setMethod(params.method);
+        setPassageId(parseInt(params.passageId, 10));
       } catch (err) {
         console.error('Error parsing parameters:', err);
         setError('Invalid test parameters. Please try again.');

@@ -6,6 +6,16 @@ import { ClozeMethod, isValidMethod } from '../utils/methodMapping';
 const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 const AVAILABLE_METHODS: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
 
+// Define all possible method rotations for balanced assignment
+export const METHOD_ROTATIONS: ClozeMethod[][] = [
+  ['contextuality', 'contextuality_plus', 'keyword'],       // ABC
+  ['contextuality', 'keyword', 'contextuality_plus'],       // ACB
+  ['contextuality_plus', 'contextuality', 'keyword'],       // BAC
+  ['contextuality_plus', 'keyword', 'contextuality'],       // BCA
+  ['keyword', 'contextuality', 'contextuality_plus'],       // CAB
+  ['keyword', 'contextuality_plus', 'contextuality']        // CBA
+];
+
 /**
  * Randomly selects a combination of 3 passages and 3 methods
  * Ensures no duplicates in the selections
@@ -15,13 +25,49 @@ export const getRandomCombination = () => {
   const shuffledPassages = [...AVAILABLE_PASSAGES].sort(() => Math.random() - 0.5);
   const passages = shuffledPassages.slice(0, 3);
   
-  // Generate a random method combination (ensuring each method is used once)
-  const shuffledMethods = [...AVAILABLE_METHODS].sort(() => Math.random() - 0.5);
-  const methods = shuffledMethods;
+  // Get a random method rotation
+  const rotationIndex = Math.floor(Math.random() * METHOD_ROTATIONS.length);
+  const methods = [...METHOD_ROTATIONS[rotationIndex]];
   
   console.log(`Random combination: passages=${passages}, methods=${methods}`);
   
   return { passages, methods };
+};
+
+/**
+ * Get a specific method rotation by index
+ */
+export const getMethodRotationByIndex = (index: number): ClozeMethod[] => {
+  if (index < 0 || index >= METHOD_ROTATIONS.length) {
+    console.warn(`Invalid method rotation index: ${index}, using default rotation 0`);
+    return [...METHOD_ROTATIONS[0]];
+  }
+  return [...METHOD_ROTATIONS[index]];
+};
+
+/**
+ * Get a random set of passages based on a seed
+ * This helps create more balanced passage distribution
+ */
+export const getRandomPassageSet = (seed?: number): number[] => {
+  // We'll implement a deterministic but random-feeling selection
+  // that avoids choosing the same passages too frequently
+  const shuffledPassages = [...AVAILABLE_PASSAGES];
+  
+  // If seed is provided, use it to deterministically shuffle
+  if (seed !== undefined) {
+    // Simple Fisher-Yates shuffle with seed influence
+    for (let i = shuffledPassages.length - 1; i > 0; i--) {
+      const seedFactor = (seed * 13 + i * 17) % 100 / 100;
+      const j = Math.floor(seedFactor * (i + 1));
+      [shuffledPassages[i], shuffledPassages[j]] = [shuffledPassages[j], shuffledPassages[i]];
+    }
+  } else {
+    // Regular random shuffle
+    shuffledPassages.sort(() => Math.random() - 0.5);
+  }
+  
+  return shuffledPassages.slice(0, 3);
 };
 
 /**
@@ -64,10 +110,11 @@ export const getNextTest = (
     { passages: assignedPassages, methods: assignedMethods as ClozeMethod[] };
   
   // Ensure progress is within bounds
-  if (progress < 0 || progress >= passages.length || progress >= methods.length) {
-    console.error('Invalid progress value:', progress);
-    // Default to first test if something's wrong
-    return { passageId: passages[0], method: methods[0] };
+  if (progress < 0) {
+    progress = 0;
+  } else if (progress >= passages.length || progress >= methods.length) {
+    // Use the last valid index if progress is too high
+    progress = Math.min(passages.length - 1, methods.length - 1);
   }
   
   // Get the passage and method for the current progress level
@@ -118,5 +165,38 @@ export const forceUserAssignment = async (
   return {
     assignedPassages: customPassages,
     assignedMethods: convertedMethods
+  };
+};
+
+/**
+ * Force user assignment using optimized selection
+ * Uses indices/seeds to create balanced distribution
+ */
+export const forceUserAssignmentByIndices = async (
+  userId: string,
+  passageSeed: number,
+  methodRotationIndex: number
+) => {
+  // Get passages based on seed value
+  const passages = getRandomPassageSet(passageSeed);
+  
+  // Get methods based on rotation index
+  const methods = getMethodRotationByIndex(methodRotationIndex);
+  
+  console.log(`Optimized assignment for user ${userId}:`, {
+    passages,
+    methods,
+    methodRotationIndex
+  });
+  
+  await updateUser(userId, {
+    assignedPassages: passages,
+    assignedMethods: methods,
+    progress: 0
+  });
+  
+  return {
+    assignedPassages: passages,
+    assignedMethods: methods
   };
 };

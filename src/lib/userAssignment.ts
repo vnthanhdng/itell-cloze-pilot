@@ -62,21 +62,21 @@ export const getAssignmentDistribution = async () => {
     })) as (UserData & { id: string })[];
     
     // For passages, track which ones are used most frequently
-    const passageCounts = {};
+    const passageCounts: Record<number, number> = {};
     // Initialize counters for method rotations
     const methodRotations = Array(METHOD_ROTATIONS.length).fill(0);
     const combinations = {};
     
     users.forEach(user => {
       // If user has assigned passages, count individual passages for distribution analysis
-      if (user.assignedPassages?.length > 0) {
+      if (user.assignedPassages && user.assignedPassages.length > 0) {
         user.assignedPassages.forEach(passageId => {
           passageCounts[passageId] = (passageCounts[passageId] || 0) + 1;
         });
       }
       
       // If user has assigned methods, count the rotation
-      if (user.assignedMethods?.length >= 3) {
+      if (user.assignedMethods && user.assignedMethods.length >= 3) {
         const methodKey = user.assignedMethods.join('');
         const rotationMap: {[key: string]: number} = {
           'ABC': 0, 'ACB': 1, 'BAC': 2, 
