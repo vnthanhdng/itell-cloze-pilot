@@ -38,7 +38,7 @@ export default function ClozeTest({
     "initial" | "showingAnswers" | "showingAnnotations" | "showingContinue"
   >("initial");
   const [results, setResults] = useState<{
-    answers: Array<{ word: string; isCorrect: boolean }>;
+    answers: Array<{ word: string; userInput: string; isCorrect: boolean }>;
     score: number;
   } | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(false);
@@ -164,7 +164,7 @@ export default function ClozeTest({
     ) as HTMLFieldSetElement[];
 
     let correctWords = 0;
-    const answers: Array<{ word: string; isCorrect: boolean }> = [];
+    const answers: Array<{ word: string; userInput: string; isCorrect: boolean }> = [];
 
     fields.forEach((field) => {
       const word = field.dataset.targetWord as string;
@@ -173,14 +173,14 @@ export default function ClozeTest({
       ) as HTMLInputElement[];
 
       const targetInputs = inputs.filter(input => input.dataset.isTarget === "true");
-      const userInput = targetInputs.map(input => input.value.toLowerCase()).join('');
-      const isCorrect = userInput === word.toLowerCase();
+      const userInput = targetInputs.map(input => input.value.trim().toLowerCase()).join('');
+      const isCorrect = userInput === word.trim().toLowerCase();
 
       if (isCorrect) {
         correctWords++;
       }
       
-      answers.push({ word, isCorrect });
+      answers.push({ word, userInput, isCorrect });
     });
 
     const score = (correctWords / fields.length) * 100;
@@ -226,7 +226,7 @@ export default function ClozeTest({
     // Convert answers to the format expected by onComplete
     const answerMap: Record<string, string> = {};
     results.answers.forEach((item, index) => {
-      answerMap[index.toString()] = item.word;
+      answerMap[index.toString()] = item.userInput;
     });
     
     console.log("Submitting test results:", {
@@ -254,7 +254,6 @@ export default function ClozeTest({
 
   // Render the WordItem component for each word in the text
   const renderPassageWithGaps = () => {
-    // This is where you'll integrate your gap generation logic with the WordItem UI
     return clozeText.split(/(_{3,})/).map((part, index) => {
       if (part.match(/_{3,}/)) {
         // This is a gap

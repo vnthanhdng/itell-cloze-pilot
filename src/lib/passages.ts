@@ -33,7 +33,6 @@ export function loadPassage(passageId: string): PassageData | null {
     const fileContent = fs.readFileSync(jsonlPath, 'utf8');
     const lines = fileContent.split('\n').filter(line => line.trim());
     
-    // For simplicity, we're using the array index as the passage ID
     const index = parseInt(passageId) - 1;
     if (index < 0 || index >= lines.length) {
       return null;
