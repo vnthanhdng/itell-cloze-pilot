@@ -58,9 +58,11 @@ export async function GET(
     }
     
     const testData = passage[testType];
+
+    const sortedGaps = [...testData.gaps].sort((a, b) => a[1] - b[1]);
     
     // Format the gaps for the frontend
-    const gaps = testData.gaps.map(([word, startIdx, length]: [string, number, number]) => ({
+    const gaps = sortedGaps.map(([word, startIdx, length]: [string, number, number]) => ({
       word,
       start_idx: startIdx,
       end_idx: startIdx + length,

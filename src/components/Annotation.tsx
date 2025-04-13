@@ -7,6 +7,8 @@ interface AnnotationComponentProps {
   onChange: (annotations: Record<string, string>) => void;
   isComplete: boolean;
   setIsComplete: (isComplete: boolean) => void;
+  holisticScore: number;
+  setHolisticScore: (score: number) => void;
 }
 
 export default function AnnotationComponent({ 
@@ -14,7 +16,9 @@ export default function AnnotationComponent({
   value,
   onChange,
   isComplete,
-  setIsComplete
+  setIsComplete,
+  holisticScore,
+  setHolisticScore
 }: AnnotationComponentProps) {
   const [annotations, setAnnotations] = useState<Record<string, string>>(value || {});
   
@@ -26,14 +30,14 @@ export default function AnnotationComponent({
     { value: 'unpredictable', label: 'Unpredictable' }
   ];
   
-  // Check if all gaps have been annotated
+  // Check if all gaps have been annotated and a holistic score has been selected
   useEffect(() => {
     const allAnnotated = gaps.every((gap, index) => {
       return annotations[index] !== undefined && annotations[index] !== '';
     });
     
-    setIsComplete(allAnnotated);
-  }, [annotations, gaps, setIsComplete]);
+    setIsComplete(allAnnotated && holisticScore > 0);
+  }, [annotations, gaps, setIsComplete, holisticScore]);
   
   // Handle annotation change
   const handleAnnotationChange = (index: number, value: string) => {
@@ -41,11 +45,42 @@ export default function AnnotationComponent({
     setAnnotations(newAnnotations);
     onChange(newAnnotations);
   };
+
+  const handleHolisticScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHolisticScore(parseInt(e.target.value));
+  }
   
   return (
     <div className="mt-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
-      <h3 className="text-lg font-medium mb-4">Information Source Annotation</h3>
-      
+      <h3 className="text-lg font-medium mb-4">Test Evaluation</h3>
+      <div className='mb-6 pb-6 border-b border-gray-200'>
+      <h4 className="font-medium mb-3">Overall Holistic Evaluation</h4>
+        <p className="text-sm text-gray-600 mb-4">
+          Please provide an overall score for this cloze test:
+        </p>
+        
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((score) => (
+            <div key={score} className="flex items-start">
+              <input
+                type="radio"
+                id={`score-${score}`}
+                name="holisticScore"
+                value={score}
+                checked={holisticScore === score}
+                onChange={handleHolisticScoreChange}
+                className="mt-1 mr-3"
+              />
+              <label htmlFor={`score-${score}`} className="text-sm">
+                <span className="font-medium">{score}:</span> {getHolisticScoreDescription(score)}
+              </label>
+            </div>
+          ))}
+
+      </div>
+      </div>
+      <div>
+        <h4 className='font-medium mb-3'>Information Source Annotation</h4>
       <div className="mb-4">
         <p className="text-sm text-gray-600 mb-2">
           For each gap you completed, identify where you found the information needed to answer:
@@ -96,5 +131,21 @@ export default function AnnotationComponent({
         </div>
       )}
     </div>
+    </div>
   );
+}
+
+function getHolisticScoreDescription(score: number): string {
+  switch (score) {
+    case 1:
+      return "The cloze test was either far too easy or impossible.";
+    case 2:
+      return "The cloze test did a reasonably good job of measuring my reading comprehension, but some of the items were either too easy or impossible to answer.";
+    case 3:
+      return "The cloze test did a good job of measuring my reading comprehension, most of the items were difficult but possible to answer.";
+    case 4:
+      return "The cloze test did an excellent job of measuring my reading comprehension, all items were difficult but possible to answer.";
+    default:
+      return "";
+  }
 }

@@ -135,6 +135,34 @@
   }
   
   .cloze-passage {
-    line-height: 1.8;
+    line-height: 2;
     white-space: pre-wrap;
+  }
+
+  .word-item {
+    margin: 0 2px;
+    vertical-align: middle; 
+  }
+  
+
+  .answer-review-item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.375rem;
+  }
+  
+  .annotation-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+  }
+  
+
+  .prose p {
+    margin-bottom: 1.5em;
+    line-height: 1.8;
+  }
+  
+  .prose h1, .prose h2, .prose h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
   }

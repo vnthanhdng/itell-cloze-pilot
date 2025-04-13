@@ -3,7 +3,7 @@ import { GapItem } from '../utils/types';
 import { Alert, AlertDescription } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Errorbox } from "./ui/callout";
-import { SendHorizontalIcon, ArrowLeftIcon } from "lucide-react";
+import { SendHorizontalIcon, ArrowRightIcon } from "lucide-react";
 import { toast } from "sonner";
 import { WordItem } from './word-item';
 import AnnotationComponent from './Annotation';
@@ -17,7 +17,9 @@ interface ClozeTestProps {
     score: number;
     timeSpent: number;
     answers: Record<string, string>;
+    correctAnswers: Record<string, string>;
     annotations: Record<string, string>;
+    holisticScore: number;
   }) => void;
 }
 
@@ -31,6 +33,7 @@ export default function ClozeTest({
   const [clozeText, setClozeText] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [annotations, setAnnotations] = useState<Record<string, string>>({});
+  const [holisticScore, setHolisticScore] = useState<number>(0);
   const [annotationsComplete, setAnnotationsComplete] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -39,6 +42,7 @@ export default function ClozeTest({
   >("initial");
   const [results, setResults] = useState<{
     answers: Array<{ word: string; userInput: string; isCorrect: boolean }>;
+    correctAnswers: Record<string, string>;
     score: number;
   } | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(false);
@@ -65,13 +69,15 @@ export default function ClozeTest({
         if (data.error) {
           throw new Error(data.error);
         }
+
+        const sortedGaps = [...data.gaps].sort((a, b) => a.start_idx - b.start_idx);
         
-        setGaps(data.gaps);
+        setGaps(sortedGaps);
         setClozeText(data.clozeText);
         
         // Initialize user answers
         const initialAnswers: Record<string, string> = {};
-        data.gaps.forEach((gap: GapItem, index: number) => {
+        sortedGaps.forEach((gap: GapItem, index: number) => {
           initialAnswers[index] = '';
         });
         
@@ -147,9 +153,9 @@ export default function ClozeTest({
           input.style.borderColor = "#ef4444";
           input.style.color = "#b91c1c";
 
-          if (input.value !== correctLetter) {
-            input.value = correctLetter;
-          }
+          // if (input.value !== correctLetter) {
+          //   input.value = correctLetter;
+          // }
         }
       });
     });
@@ -157,7 +163,7 @@ export default function ClozeTest({
 
   // Process form data
   const processForm = () => {
-    if (!formRef.current) return { correctWords: 0, totalWords: 0, answers: [], score: 0 };
+    if (!formRef.current) return { correctWords: 0, totalWords: 0, answers: [], correctAnswers: {}, score: 0 };
 
     const fields = Array.from(
       formRef.current.querySelectorAll("fieldset[data-target-word]")
@@ -165,8 +171,9 @@ export default function ClozeTest({
 
     let correctWords = 0;
     const answers: Array<{ word: string; userInput: string; isCorrect: boolean }> = [];
+    const correctAnswersMap: Record<string, string> = {};
 
-    fields.forEach((field) => {
+    fields.forEach((field, index) => {
       const word = field.dataset.targetWord as string;
       const inputs = Array.from(
         field.querySelectorAll("input[type=text]")
@@ -181,6 +188,7 @@ export default function ClozeTest({
       }
       
       answers.push({ word, userInput, isCorrect });
+      correctAnswersMap[index.toString()] = word;
     });
 
     const score = (correctWords / fields.length) * 100;
@@ -189,14 +197,15 @@ export default function ClozeTest({
       correctWords,
       totalWords: fields.length,
       answers,
+      correctAnswers: correctAnswersMap,
       score,
     };
   };
 
   // Handle "Show Answers" button click
   const handleShowAnswers = () => {
-    const { answers, score } = processForm();
-    setResults({ answers, score });
+    const { answers, score, correctAnswers } = processForm();
+    setResults({ answers, score, correctAnswers });
 
     toast.info(
       "Test finished. First review the correct answers, then complete annotations before continuing."
@@ -233,14 +242,18 @@ export default function ClozeTest({
       score: results.score,
       timeSpent,
       answers: answerMap,
-      annotations
+      correctAnswers: results.correctAnswers,
+      annotations,
+      holisticScore
     });
     
     onComplete({
       score: results.score,
       timeSpent,
       answers: answerMap,
-      annotations
+      correctAnswers: results.correctAnswers,
+      annotations,
+      holisticScore
     });
   };
 
@@ -294,7 +307,7 @@ export default function ClozeTest({
         ref={formRef}
         onSubmit={handleSubmit}
       >
-        <div className="space-y-3 leading-relaxed xl:text-lg">
+        <div className="space-y-3 leading-relaxed xl:text-lg cloze-passage">
           {renderPassageWithGaps()}
         </div>
 
@@ -310,6 +323,8 @@ export default function ClozeTest({
               onChange={handleAnnotationChange}
               isComplete={annotationsComplete}
               setIsComplete={setAnnotationsComplete}
+              holisticScore={holisticScore}
+              setHolisticScore={setHolisticScore}
             />
           </div>
         )}
@@ -329,7 +344,7 @@ export default function ClozeTest({
               className="w-48"
             >
               <span className="inline-flex items-center gap-2">
-                <ArrowLeftIcon className="size-3" />
+                <ArrowRightIcon className="size-3" />
                 Continue
               </span>
             </Button>

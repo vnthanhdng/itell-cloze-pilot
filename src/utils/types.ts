@@ -38,7 +38,9 @@ export interface TestResult {
   score: number;
   timeSpent: number;
   answers: Record<string, string>;     // key: gapIndex, value: user's answer
+  correctAnswers: Record<string, string>;
   annotations: Record<string, string>; // key: gapIndex, value: annotation source
+  holisticScore: number;
   timeStamp?: Date;
 }
 

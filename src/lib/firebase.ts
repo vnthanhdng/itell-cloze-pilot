@@ -70,7 +70,9 @@ export const saveTestResult = async (
       testResult.method === undefined ||
       testResult.passageId === undefined ||
       testResult.score === undefined ||
-      testResult.timeSpent === undefined
+      testResult.timeSpent === undefined ||
+      testResult.holisticScore === undefined || 
+      testResult.correctAnswers === undefined
     ) {
       throw new Error("Missing required fields in test result");
     }
@@ -82,6 +84,9 @@ export const saveTestResult = async (
       // Ensure answers and annotations are simple objects with string values
       answers: Object.fromEntries(
         Object.entries(testResult.answers || {}).map(([k, v]) => [k, String(v)])
+      ),
+      correctAnswers: Object.fromEntries(
+        Object.entries(testResult.correctAnswers || {}).map(([k, v]) => [k, String(v)])
       ),
       annotations: Object.fromEntries(
         Object.entries(testResult.annotations || {}).map(([k, v]) => [k, String(v)])

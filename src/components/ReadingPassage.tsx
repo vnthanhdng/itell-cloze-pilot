@@ -75,7 +75,9 @@ export default function ReadingPassage({
     score: number;
     timeSpent: number;
     answers: Record<string, string>;
+    correctAnswers: Record<string, string>;
     annotations: Record<string, string>;
+    holisticScore: number;
   }) => {
     // Check if user is authenticated
     if (!auth.currentUser) {
@@ -94,7 +96,9 @@ export default function ReadingPassage({
       score: results.score,
       timeSpent: results.timeSpent,
       answers: results.answers,
-      annotations: results.annotations
+      correctAnswers: results.correctAnswers,
+      annotations: results.annotations,
+      holisticScore: results.holisticScore
     }).then(() => {
       console.log("Test result saved successfully");
       onComplete();
