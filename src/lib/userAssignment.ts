@@ -6,8 +6,11 @@ import {
   forceUserAssignmentByIndices,
   getMethodRotationByIndex,
   getRandomPassageSet,
+  getRandomCombination,
   METHOD_ROTATIONS
 } from './counterbalance';
+import { ClozeMethod } from '../utils/methodMapping';
+import { updateUser } from './firebase';
 
 // Define a type for the user data
 interface UserData {
@@ -149,27 +152,47 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     // Get optimized assignment indices
     const { seedValue, methodRotationIndex } = await getOptimizedAssignment();
     
-    console.log(`Optimized assignment for user ${userId}:`, {
-      seedValue, // Just a random seed, not used for passage selection
-      methodRotationIndex
+    // Generate 10 passages using the seed value
+    const passages = getRandomPassageSet(seedValue).slice(0, 10);
+    
+    // Get a method rotation and distribute it across 10 tests
+    const methodRotation = getMethodRotationByIndex(methodRotationIndex);
+    const methods: ClozeMethod[] = [];
+    
+    // Distribute methods from the rotation across 10 tests (approximately 3-3-4 distribution)
+    const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
+    
+    for (let i = 0; i < methodRotation.length; i++) {
+      for (let j = 0; j < counts[i]; j++) {
+        methods.push(methodRotation[i]);
+      }
+    }
+    
+    // Shuffle to avoid patterns
+    methods.sort(() => Math.random() - 0.5);
+    
+    // Save the assignment to the user document
+    await updateUser(userId, {
+      assignedPassages: passages,
+      assignedMethods: methods,
+      progress: 0
     });
     
-    // Use the helper function that handles indices properly
-    // This will generate random passages but use balanced method rotations
-    return await forceUserAssignmentByIndices(userId, seedValue, methodRotationIndex);
+    return {
+      assignedPassages: passages,
+      assignedMethods: methods
+    };
   } catch (error) {
     console.error('Error assigning optimized content:', error);
     
     // Fallback to simple assignment
-    console.log("Falling back to simple assignment");
-    const { passages, methods } = await assignUserTests();
+    const { passages, methods } = getRandomCombination();
     
-    // Save the assignment to the user document
-    await setDoc(doc(db, "users", userId), {
+    await updateUser(userId, {
       assignedPassages: passages,
       assignedMethods: methods,
       progress: 0
-    }, { merge: true });
+    });
     
     return { assignedPassages: passages, assignedMethods: methods };
   }

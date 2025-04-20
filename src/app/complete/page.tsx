@@ -11,7 +11,11 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'fire
 type MethodId = string;
 
 // Default methods to use if no test results are found
-const DEFAULT_METHODS = ['contextuality', 'contextuality_plus', 'keyword'];
+const DEFAULT_METHODS = [
+  'contextuality', 'contextuality_plus', 'keyword', 
+  'contextuality', 'contextuality_plus', 'keyword', 
+  'contextuality', 'contextuality_plus', 'keyword', 'keyword'
+];
 
 export default function CompletePage() {
   const router = useRouter();
@@ -79,16 +83,16 @@ export default function CompletePage() {
             setCompletedMethods(uniqueMethods);
             
             // Check if they've completed requirements
-            if (userData.progress < 3 || uniqueMethods.length < 3) {
+            if (userData.progress < 10 || uniqueMethods.length < 3) {
               setError(`You need to complete more tests before accessing the final survey. 
-                      Progress: ${userData.progress}/3, Methods completed: ${uniqueMethods.length}/3`);
+                      Progress: ${userData.progress}/10, Methods completed: ${uniqueMethods.length}/3`);
             } else {
               setShowSurvey(true);
             }
           } else {
             // No test results found, normal flow
             setError(`You need to complete the tests before accessing the final survey.
-                    Progress: ${userData.progress}/3, Methods completed: 0/3`);
+                    Progress: ${userData.progress}/10, Methods completed: 0/3`);
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
