@@ -56,7 +56,7 @@ export default function AnnotationComponent({
       <div className='mb-6 pb-6 border-b border-gray-200'>
       <h4 className="font-medium mb-3">Overall Holistic Evaluation</h4>
         <p className="text-sm text-gray-600 mb-4">
-          Please provide an overall score for this cloze test:
+        Please provide an overall score for this cloze test. Treat the distance between each score on the rating scale (1-4) as equal.
         </p>
         
         <div className="space-y-2">
