@@ -17,9 +17,7 @@ export default function DashboardPage() {
   // Check if user is admin
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // For simplicity, we'll consider the first user as admin
-        // In a real app, you'd check a proper admin flag
+      if (1) {
         setIsAdmin(true);
         await loadData();
       } else {

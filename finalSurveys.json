@@ -1,0 +1,50 @@
+[
+  {
+    "id": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "userId": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "methodRanking": [
+      "C",
+      "B",
+      "A"
+    ],
+    "mostEngaging": "A",
+    "mostHelpful": "C",
+    "feedback": "",
+    "timestamp": {
+      "_seconds": 1743992067,
+      "_nanoseconds": 711000000
+    }
+  },
+  {
+    "id": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "methodRanking": [
+      "contextuality_plus",
+      "contextuality",
+      "keyword"
+    ],
+    "mostEngaging": "contextuality_plus",
+    "mostHelpful": "contextuality_plus",
+    "feedback": "",
+    "timestamp": {
+      "_seconds": 1744526674,
+      "_nanoseconds": 582000000
+    }
+  },
+  {
+    "id": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "userId": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "methodRanking": [
+      "B",
+      "C",
+      "A"
+    ],
+    "mostEngaging": "B",
+    "mostHelpful": "A",
+    "feedback": "",
+    "timestamp": {
+      "_seconds": 1744035674,
+      "_nanoseconds": 720000000
+    }
+  }
+]

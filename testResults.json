@@ -1,0 +1,576 @@
+[
+  {
+    "id": "2TRxCPvunxWRm44F519L",
+    "userId": "7q0l6V8sQsXEDFXS2G62ivNjhJ92",
+    "method": "contextuality",
+    "passageId": 2,
+    "score": 85.71428571428571,
+    "timeSpent": 402.24,
+    "answers": {
+      "0": "developing",
+      "1": "expertise",
+      "2": "updates",
+      "3": "system",
+      "4": "experts",
+      "5": "informed",
+      "6": "tools"
+    },
+    "annotations": {
+      "0": "source",
+      "1": "source",
+      "2": "source",
+      "3": "source",
+      "4": "sentence",
+      "5": "sentence",
+      "6": "source"
+    },
+    "timestamp": {
+      "_seconds": 1744063736,
+      "_nanoseconds": 219000000
+    }
+  },
+  {
+    "id": "7J4WG4xpsBi7QULX0cF2",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "contextuality_plus",
+    "passageId": 12,
+    "score": 60,
+    "timeSpent": 554.532,
+    "answers": {
+      "0": "explain",
+      "1": "observation",
+      "2": "come",
+      "3": "surveys",
+      "4": "relationships",
+      "5": "researchers",
+      "6": "understanding",
+      "7": "inflammation",
+      "8": "",
+      "9": "world"
+    },
+    "correctAnswers": {
+      "0": "explain",
+      "1": "observation",
+      "2": "stem",
+      "3": "surveys",
+      "4": "relationships",
+      "5": "explanation",
+      "6": "investigating",
+      "7": "inflammation",
+      "8": "deeper",
+      "9": "world"
+    },
+    "annotations": {
+      "0": "source",
+      "1": "source",
+      "2": "sentence",
+      "3": "source",
+      "4": "source",
+      "5": "source",
+      "6": "source",
+      "7": "source",
+      "8": "unpredictable",
+      "9": "source"
+    },
+    "holisticScore": 4,
+    "timestamp": {
+      "_seconds": 1744526215,
+      "_nanoseconds": 549000000
+    }
+  },
+  {
+    "id": "89YXHGCy4k9OBYd9YraG",
+    "userId": "kng9dJVco4NXsFjrySxx8U6gTbw1",
+    "method": "A",
+    "passageId": 1,
+    "score": 0,
+    "timeSpent": 19.657,
+    "answers": {
+      "0": "beliefs",
+      "1": "belief",
+      "2": "debunked",
+      "3": "confessions",
+      "4": "calorie",
+      "5": "skepticism",
+      "6": "challenge",
+      "7": "unanswered"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "passage",
+      "2": "passage",
+      "3": "passage",
+      "4": "sentence",
+      "5": "passage",
+      "6": "source",
+      "7": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744058415,
+      "_nanoseconds": 795000000
+    }
+  },
+  {
+    "id": "DZ2Gzl4WIQBZCtJylgVS",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "contextuality",
+    "passageId": 4,
+    "score": 90,
+    "timeSpent": 398.529,
+    "answers": {
+      "0": "features",
+      "1": "involves",
+      "2": "stereotypes",
+      "3": "questions",
+      "4": "answered",
+      "5": "progress",
+      "6": "like",
+      "7": "lead",
+      "8": "highlights",
+      "9": "inquiry"
+    },
+    "correctAnswers": {
+      "0": "principles",
+      "1": "involves",
+      "2": "stereotypes",
+      "3": "questions",
+      "4": "answered",
+      "5": "progress",
+      "6": "like",
+      "7": "lead",
+      "8": "highlights",
+      "9": "inquiry"
+    },
+    "annotations": {
+      "0": "unpredictable",
+      "1": "source",
+      "2": "source",
+      "3": "passage",
+      "4": "sentence",
+      "5": "source",
+      "6": "sentence",
+      "7": "sentence",
+      "8": "sentence",
+      "9": "source"
+    },
+    "holisticScore": 3,
+    "timestamp": {
+      "_seconds": 1744526624,
+      "_nanoseconds": 649000000
+    }
+  },
+  {
+    "id": "HljkNhjLIz1E1gkI2CMi",
+    "userId": "nskv3OAN29PY7QPTPnDOrQmhWlq1",
+    "method": "contextuality_plus",
+    "passageId": 3,
+    "score": 0,
+    "timeSpent": 21.064,
+    "answers": {
+      "0": "achieved",
+      "1": "researchers",
+      "2": "conceptualizing",
+      "3": "exploring",
+      "4": "involves",
+      "5": "uncertain",
+      "6": "implications",
+      "7": "tried",
+      "8": "continuity"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "passage",
+      "2": "passage",
+      "3": "source",
+      "4": "passage",
+      "5": "passage",
+      "6": "sentence",
+      "7": "passage",
+      "8": "unpredictable"
+    },
+    "timestamp": {
+      "_seconds": 1744054665,
+      "_nanoseconds": 778000000
+    }
+  },
+  {
+    "id": "IZaLOD98axsnLPCCukcM",
+    "userId": "kng9dJVco4NXsFjrySxx8U6gTbw1",
+    "method": "keyword",
+    "passageId": 3,
+    "score": 0,
+    "timeSpent": 26.316,
+    "answers": {
+      "0": "articles",
+      "1": "feasibility",
+      "2": "feasibility",
+      "3": "questions",
+      "4": "questions",
+      "5": "research",
+      "6": "research"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "source",
+      "2": "passage",
+      "3": "unpredictable",
+      "4": "sentence",
+      "5": "sentence",
+      "6": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744058447,
+      "_nanoseconds": 719000000
+    }
+  },
+  {
+    "id": "KQuP9OPlq7n9DdjXxD7n",
+    "userId": "nskv3OAN29PY7QPTPnDOrQmhWlq1",
+    "method": "A",
+    "passageId": 1,
+    "score": 0,
+    "timeSpent": 52.451,
+    "answers": {
+      "0": "beliefs",
+      "1": "belief",
+      "2": "debunked",
+      "3": "confessions",
+      "4": "calorie",
+      "5": "skepticism",
+      "6": "challenge",
+      "7": "unanswered"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "source",
+      "2": "source",
+      "3": "sentence",
+      "4": "passage",
+      "5": "source",
+      "6": "passage",
+      "7": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744053597,
+      "_nanoseconds": 573000000
+    }
+  },
+  {
+    "id": "Qfa5CnnldR0PK2AokHGz",
+    "userId": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "method": "C",
+    "passageId": 11,
+    "score": 0,
+    "timeSpent": 21.024,
+    "answers": {
+      "0": "specific",
+      "1": "fundamentals",
+      "2": "document",
+      "3": "CRO",
+      "4": "CRO",
+      "5": "training",
+      "6": "training"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "source",
+      "2": "sentence",
+      "3": "passage",
+      "4": "unpredictable",
+      "5": "source",
+      "6": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744035623,
+      "_nanoseconds": 960000000
+    }
+  },
+  {
+    "id": "ULdGcFTP9GPNPzJaS1LZ",
+    "userId": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "method": "A",
+    "passageId": 1,
+    "score": 0,
+    "timeSpent": 15.095,
+    "answers": {
+      "0": "beliefs",
+      "1": "belief",
+      "2": "debunked",
+      "3": "confessions",
+      "4": "calorie",
+      "5": "skepticism",
+      "6": "challenge",
+      "7": "unanswered"
+    },
+    "annotations": {
+      "0": "sentence",
+      "1": "sentence",
+      "2": "passage",
+      "3": "source",
+      "4": "passage",
+      "5": "unpredictable",
+      "6": "passage",
+      "7": "sentence"
+    },
+    "timestamp": {
+      "_seconds": 1743992012,
+      "_nanoseconds": 874000000
+    }
+  },
+  {
+    "id": "jQWUsUXWjAn29P07xCEx",
+    "userId": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "method": "B",
+    "passageId": 6,
+    "score": 0,
+    "timeSpent": 17.311,
+    "answers": {
+      "0": "quantitative",
+      "1": "chosen",
+      "2": "abstract",
+      "3": "entities",
+      "4": "determine",
+      "5": "convenience",
+      "6": "determine",
+      "7": "studies",
+      "8": "experiments",
+      "9": "conclusions"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "source",
+      "2": "unpredictable",
+      "3": "passage",
+      "4": "sentence",
+      "5": "sentence",
+      "6": "unpredictable",
+      "7": "sentence",
+      "8": "source",
+      "9": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1743992035,
+      "_nanoseconds": 145000000
+    }
+  },
+  {
+    "id": "m0OjWQyz6aHxBa6mLVjw",
+    "userId": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "method": "C",
+    "passageId": 11,
+    "score": 0,
+    "timeSpent": 12.864,
+    "answers": {
+      "0": "specific",
+      "1": "fundamentals",
+      "2": "document",
+      "3": "CRO",
+      "4": "CRO",
+      "5": "training",
+      "6": "training"
+    },
+    "annotations": {
+      "0": "source",
+      "1": "passage",
+      "2": "sentence",
+      "3": "source",
+      "4": "unpredictable",
+      "5": "sentence",
+      "6": "source"
+    },
+    "timestamp": {
+      "_seconds": 1743992050,
+      "_nanoseconds": 415000000
+    }
+  },
+  {
+    "id": "svWcKRsmyln3a0NtINvH",
+    "userId": "kng9dJVco4NXsFjrySxx8U6gTbw1",
+    "method": "contextuality",
+    "passageId": 7,
+    "score": 0,
+    "timeSpent": 28.938,
+    "answers": {
+      "0": "hypothesis",
+      "1": "theories",
+      "2": "philosophical",
+      "3": "cases",
+      "4": "hypothesis",
+      "5": "result",
+      "6": "abandon",
+      "7": "peer",
+      "8": "presentations",
+      "9": "prestigious"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "source",
+      "2": "source",
+      "3": "passage",
+      "4": "passage",
+      "5": "passage",
+      "6": "passage",
+      "7": "passage",
+      "8": "passage",
+      "9": "source"
+    },
+    "timestamp": {
+      "_seconds": 1744058480,
+      "_nanoseconds": 565000000
+    }
+  },
+  {
+    "id": "ujmwOWiD1MzXJwnCqbyH",
+    "userId": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "method": "B",
+    "passageId": 6,
+    "score": 0,
+    "timeSpent": 27.066,
+    "answers": {
+      "0": "quantitative",
+      "1": "chosen",
+      "2": "abstract",
+      "3": "entities",
+      "4": "determine",
+      "5": "convenience",
+      "6": "determine",
+      "7": "studies",
+      "8": "experiments",
+      "9": "conclusions"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "passage",
+      "2": "unpredictable",
+      "3": "sentence",
+      "4": "passage",
+      "5": "source",
+      "6": "sentence",
+      "7": "source",
+      "8": "sentence",
+      "9": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744035599,
+      "_nanoseconds": 737000000
+    }
+  },
+  {
+    "id": "ulkHk8lrMDXJ25eawozC",
+    "userId": "bXjoMYax22PHHF8fPeZBUxICr4r1",
+    "method": "contextuality_plus",
+    "passageId": 1,
+    "score": 0,
+    "timeSpent": 28.247,
+    "answers": {
+      "0": "intuitive",
+      "1": "alleviate",
+      "2": "confessions",
+      "3": "calorie",
+      "4": "skepticism",
+      "5": "challenge",
+      "6": "uncertainty",
+      "7": "exploration"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "source",
+      "2": "passage",
+      "3": "sentence",
+      "4": "source",
+      "5": "sentence",
+      "6": "sentence",
+      "7": "source"
+    },
+    "timestamp": {
+      "_seconds": 1744035753,
+      "_nanoseconds": 800000000
+    }
+  },
+  {
+    "id": "vd2CKkU3CDvJhWDLZTOm",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "keyword",
+    "passageId": 2,
+    "score": 100,
+    "timeSpent": 93.468,
+    "answers": {
+      "0": "learning",
+      "1": "training",
+      "2": "system",
+      "3": "training",
+      "4": "training"
+    },
+    "correctAnswers": {
+      "0": "Learning",
+      "1": "training",
+      "2": "system",
+      "3": "training",
+      "4": "training"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "passage",
+      "2": "passage",
+      "3": "passage",
+      "4": "passage"
+    },
+    "holisticScore": 3,
+    "timestamp": {
+      "_seconds": 1744525628,
+      "_nanoseconds": 597000000
+    }
+  },
+  {
+    "id": "wurq1OiQ4tS3k82vDJNH",
+    "userId": "7q0l6V8sQsXEDFXS2G62ivNjhJ92",
+    "method": "keyword",
+    "passageId": 1,
+    "score": 50,
+    "timeSpent": 379.5,
+    "answers": {
+      "0": "scientific",
+      "1": "scientific"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744132780,
+      "_nanoseconds": 401000000
+    }
+  },
+  {
+    "id": "y9F927JECmQk7Z9IqaEZ",
+    "userId": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "method": "contextuality",
+    "passageId": 1,
+    "score": 0,
+    "timeSpent": 611.88,
+    "answers": {
+      "0": "beliefs",
+      "1": "belief",
+      "2": "debunked",
+      "3": "confessions",
+      "4": "calorie",
+      "5": "skepticism",
+      "6": "challenge",
+      "7": "unanswered"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "passage",
+      "2": "passage",
+      "3": "passage",
+      "4": "sentence",
+      "5": "sentence",
+      "6": "passage",
+      "7": "passage"
+    },
+    "timestamp": {
+      "_seconds": 1744035560,
+      "_nanoseconds": 35000000
+    }
+  }
+]

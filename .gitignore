@@ -5,7 +5,8 @@
 .env*.local
 .env
 
-
+scripts/export-firebase.js
+/itell-cloze-pilot-firebase-adminsdk-fbsvc-59b4ee98c5.json
 __pycache__/
 *.py[cod]
 *$py.class

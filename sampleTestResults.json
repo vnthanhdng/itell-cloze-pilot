@@ -1,0 +1,134 @@
+[
+  {
+    "id": "7J4WG4xpsBi7QULX0cF2",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "contextuality_plus",
+    "passageId": 12,
+    "score": 60,
+    "timeSpent": 554.532,
+    "answers": {
+      "0": "explain",
+      "1": "observation",
+      "2": "come",
+      "3": "surveys",
+      "4": "relationships",
+      "5": "researchers",
+      "6": "understanding",
+      "7": "inflammation",
+      "8": "",
+      "9": "world"
+    },
+    "correctAnswers": {
+      "0": "explain",
+      "1": "observation",
+      "2": "stem",
+      "3": "surveys",
+      "4": "relationships",
+      "5": "explanation",
+      "6": "investigating",
+      "7": "inflammation",
+      "8": "deeper",
+      "9": "world"
+    },
+    "annotations": {
+      "0": "source",
+      "1": "source",
+      "2": "sentence",
+      "3": "source",
+      "4": "source",
+      "5": "source",
+      "6": "source",
+      "7": "source",
+      "8": "unpredictable",
+      "9": "source"
+    },
+    "holisticScore": 4,
+    "timestamp": {
+      "_seconds": 1744526215,
+      "_nanoseconds": 549000000
+    }
+  },
+  {
+    "id": "DZ2Gzl4WIQBZCtJylgVS",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "contextuality",
+    "passageId": 4,
+    "score": 90,
+    "timeSpent": 398.529,
+    "answers": {
+      "0": "features",
+      "1": "involves",
+      "2": "stereotypes",
+      "3": "questions",
+      "4": "answered",
+      "5": "progress",
+      "6": "like",
+      "7": "lead",
+      "8": "highlights",
+      "9": "inquiry"
+    },
+    "correctAnswers": {
+      "0": "principles",
+      "1": "involves",
+      "2": "stereotypes",
+      "3": "questions",
+      "4": "answered",
+      "5": "progress",
+      "6": "like",
+      "7": "lead",
+      "8": "highlights",
+      "9": "inquiry"
+    },
+    "annotations": {
+      "0": "unpredictable",
+      "1": "source",
+      "2": "source",
+      "3": "passage",
+      "4": "sentence",
+      "5": "source",
+      "6": "sentence",
+      "7": "sentence",
+      "8": "sentence",
+      "9": "source"
+    },
+    "holisticScore": 3,
+    "timestamp": {
+      "_seconds": 1744526624,
+      "_nanoseconds": 649000000
+    }
+  },
+  {
+    "id": "vd2CKkU3CDvJhWDLZTOm",
+    "userId": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "method": "keyword",
+    "passageId": 2,
+    "score": 100,
+    "timeSpent": 93.468,
+    "answers": {
+      "0": "learning",
+      "1": "training",
+      "2": "system",
+      "3": "training",
+      "4": "training"
+    },
+    "correctAnswers": {
+      "0": "Learning",
+      "1": "training",
+      "2": "system",
+      "3": "training",
+      "4": "training"
+    },
+    "annotations": {
+      "0": "passage",
+      "1": "passage",
+      "2": "passage",
+      "3": "passage",
+      "4": "passage"
+    },
+    "holisticScore": 3,
+    "timestamp": {
+      "_seconds": 1744525628,
+      "_nanoseconds": 597000000
+    }
+  }
+]

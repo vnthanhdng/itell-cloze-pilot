@@ -1,0 +1,335 @@
+[
+  {
+    "id": "0I5pxqOHExVsR3U7CGn0pNBOQ7D2",
+    "uid": "0I5pxqOHExVsR3U7CGn0pNBOQ7D2",
+    "name": "Wesley Morris",
+    "email": "wesley.g.morris@vanderbilt.edu",
+    "assignedPassages": [
+      5,
+      15,
+      8
+    ],
+    "assignedMethods": [
+      "contextuality_plus",
+      "contextuality",
+      "keyword"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744134972,
+      "_nanoseconds": 483000000
+    }
+  },
+  {
+    "id": "1uWiozfS9FhZKttHsqfNW4TLR1t1",
+    "uid": "1uWiozfS9FhZKttHsqfNW4TLR1t1",
+    "name": "haha",
+    "email": "haha12@gmail.com",
+    "assignedPassages": [
+      1,
+      6,
+      11
+    ],
+    "assignedMethods": [
+      "A",
+      "B",
+      "C"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744035972,
+      "_nanoseconds": 648000000
+    }
+  },
+  {
+    "id": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "uid": "5fZAVg6fxcgGvK8DrPVRkYu3sMI2",
+    "email": "van1234@gmail.com",
+    "demographics": {
+      "age": "",
+      "gender": "",
+      "education": "",
+      "englishProficiency": "",
+      "readingFrequency": ""
+    },
+    "assignedPassages": [
+      1,
+      6,
+      11
+    ],
+    "assignedMethods": [
+      "contextuality",
+      "contextuality_plus",
+      "keyword"
+    ],
+    "startTime": {
+      "_seconds": 1743991880,
+      "_nanoseconds": 122000000
+    },
+    "progress": 3,
+    "endTime": {
+      "_seconds": 1743992050,
+      "_nanoseconds": 718000000
+    }
+  },
+  {
+    "id": "7q0l6V8sQsXEDFXS2G62ivNjhJ92",
+    "uid": "7q0l6V8sQsXEDFXS2G62ivNjhJ92",
+    "name": "Langdon Test 1",
+    "email": "langdon.holmes@vanderbilt.edu",
+    "assignedPassages": [
+      2,
+      1,
+      3
+    ],
+    "assignedMethods": [
+      "contextuality",
+      "keyword",
+      "contextuality_plus"
+    ],
+    "startTime": {
+      "_seconds": 1744062495,
+      "_nanoseconds": 889000000
+    },
+    "progress": 2
+  },
+  {
+    "id": "KhNQmG4Vcne6vZBFr9b1lavdPCD2",
+    "uid": "KhNQmG4Vcne6vZBFr9b1lavdPCD2",
+    "name": "Van Thanh Dang",
+    "email": "vandang@vanderbilt.edu",
+    "assignedPassages": [
+      2,
+      7,
+      12
+    ],
+    "assignedMethods": [
+      "A",
+      "B",
+      "C"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744050994,
+      "_nanoseconds": 69000000
+    }
+  },
+  {
+    "id": "Nw6HxmcJK2YalrEnVyUes8GJEWq1",
+    "uid": "Nw6HxmcJK2YalrEnVyUes8GJEWq1",
+    "name": "Van",
+    "email": "van1234567@gmail.com",
+    "assignedPassages": [
+      15,
+      4,
+      6
+    ],
+    "assignedMethods": [
+      "keyword",
+      "contextuality_plus",
+      "contextuality"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744059364,
+      "_nanoseconds": 531000000
+    }
+  },
+  {
+    "id": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "uid": "URQPXL01SaZBO7pEFvcNUG4CVGv2",
+    "name": "Van Thanh Dang",
+    "email": "van.t.dang@vanderbilt.edu",
+    "assignedPassages": [
+      2,
+      12,
+      4
+    ],
+    "assignedMethods": [
+      "keyword",
+      "contextuality_plus",
+      "contextuality"
+    ],
+    "startTime": {
+      "_seconds": 1744515827,
+      "_nanoseconds": 221000000
+    },
+    "progress": 3,
+    "endTime": {
+      "_seconds": 1744526625,
+      "_nanoseconds": 88000000
+    }
+  },
+  {
+    "id": "XqMyR4iE15OysGcv0meCaVz8v883",
+    "uid": "XqMyR4iE15OysGcv0meCaVz8v883",
+    "email": "van1235@gmai.com",
+    "demographics": {
+      "age": "",
+      "gender": "",
+      "education": "",
+      "englishProficiency": "",
+      "readingFrequency": ""
+    },
+    "assignedPassages": [
+      1,
+      6,
+      11
+    ],
+    "assignedMethods": [
+      "contextuality",
+      "contextuality_plus",
+      "keyword"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1743992173,
+      "_nanoseconds": 899000000
+    }
+  },
+  {
+    "id": "aAOK7AXew6OTnVBSh0tBXcBEtvE2",
+    "uid": "aAOK7AXew6OTnVBSh0tBXcBEtvE2",
+    "name": "Van Dang",
+    "email": "van12345@gmail.com",
+    "assignedPassages": [
+      14,
+      4,
+      8
+    ],
+    "assignedMethods": [
+      "contextuality",
+      "contextuality_plus",
+      "keyword"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744056953,
+      "_nanoseconds": 91000000
+    }
+  },
+  {
+    "id": "bXjoMYax22PHHF8fPeZBUxICr4r1",
+    "uid": "bXjoMYax22PHHF8fPeZBUxICr4r1",
+    "name": "Van Dang",
+    "email": "vanthanh@gmail.com",
+    "assignedPassages": [
+      1,
+      6,
+      11
+    ],
+    "assignedMethods": [
+      "B",
+      "A",
+      "C"
+    ],
+    "startTime": {
+      "_seconds": 1744035716,
+      "_nanoseconds": 446000000
+    },
+    "progress": 1
+  },
+  {
+    "id": "eoMzw4ZZ0cSwPhcDPTNlZi8DOof2",
+    "uid": "eoMzw4ZZ0cSwPhcDPTNlZi8DOof2",
+    "name": "Langdon Test 1",
+    "email": "langdon@test.com",
+    "assignedPassages": [
+      3,
+      1,
+      6
+    ],
+    "assignedMethods": [
+      "contextuality_plus",
+      "keyword",
+      "contextuality"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744200924,
+      "_nanoseconds": 381000000
+    }
+  },
+  {
+    "id": "kng9dJVco4NXsFjrySxx8U6gTbw1",
+    "uid": "kng9dJVco4NXsFjrySxx8U6gTbw1",
+    "name": "Van Thanh Dang",
+    "email": "van.t.dang123456@vanderbilt.edu",
+    "assignedPassages": [
+      4,
+      3,
+      7
+    ],
+    "assignedMethods": [
+      "contextuality_plus",
+      "keyword",
+      "contextuality"
+    ],
+    "startTime": {
+      "_seconds": 1744058366,
+      "_nanoseconds": 627000000
+    },
+    "progress": 3,
+    "endTime": {
+      "_seconds": 1744058480,
+      "_nanoseconds": 985000000
+    }
+  },
+  {
+    "id": "nskv3OAN29PY7QPTPnDOrQmhWlq1",
+    "uid": "nskv3OAN29PY7QPTPnDOrQmhWlq1",
+    "name": "Van Dang",
+    "email": "info@climatedonor.org",
+    "assignedPassages": [
+      12,
+      3,
+      6
+    ],
+    "assignedMethods": [
+      "keyword",
+      "contextuality_plus",
+      "contextuality"
+    ],
+    "startTime": {
+      "_seconds": 1744053541,
+      "_nanoseconds": 209000000
+    },
+    "progress": 2
+  },
+  {
+    "id": "t9nm0zZK1dOKB6Vsmi35xsBoHyF2",
+    "uid": "t9nm0zZK1dOKB6Vsmi35xsBoHyF2",
+    "name": "Van Dang",
+    "email": "van.t.dang12346789@vanderbilt.edu",
+    "assignedPassages": [
+      2,
+      1,
+      12
+    ],
+    "assignedMethods": [
+      "keyword",
+      "contextuality_plus",
+      "contextuality"
+    ],
+    "progress": 0,
+    "startTime": {
+      "_seconds": 1744059038,
+      "_nanoseconds": 345000000
+    }
+  },
+  {
+    "id": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "uid": "tAy6ot2t86WuLZPmZawOUt3hrBs1",
+    "name": "Van Dang",
+    "email": "insta1234@gmail.com",
+    "startTime": {
+      "_seconds": 1744034791,
+      "_nanoseconds": 467000000
+    },
+    "progress": 3,
+    "endTime": {
+      "_seconds": 1744035624,
+      "_nanoseconds": 284000000
+    }
+  }
+]
