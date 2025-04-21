@@ -12,9 +12,7 @@ type MethodId = string;
 
 // Default methods to use if no test results are found
 const DEFAULT_METHODS = [
-  'contextuality', 'contextuality_plus', 'keyword', 
-  'contextuality', 'contextuality_plus', 'keyword', 
-  'contextuality', 'contextuality_plus', 'keyword', 'keyword'
+  'contextuality', 'contextuality_plus', 'keyword'
 ];
 
 export default function CompletePage() {
