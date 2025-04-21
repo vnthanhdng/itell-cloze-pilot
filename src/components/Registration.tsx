@@ -4,6 +4,7 @@ import { auth } from '../lib/firebase';
 import { createUser } from '../lib/firebase';
 import { assignUserTests } from '../lib/counterbalance';
 import { convertToStandardMethod } from '../utils/methodMapping';
+import { ClozeMethod } from '../utils/methodMapping';
 
 interface RegistrationProps {
   onComplete: (uid: string) => void;
@@ -33,7 +34,17 @@ export default function Registration({ onComplete }: RegistrationProps) {
 
       // Get passage and method assignments
       console.log('Getting test assignments...');
-      const { passages, methods } = await assignUserTests();
+      const testAssignments = await assignUserTests();
+      let passages: number[] = [];
+      let methods: ClozeMethod[] = [];
+
+      if ('passages' in testAssignments && 'methods' in testAssignments) {
+        passages = testAssignments.passages;
+        methods = testAssignments.methods;
+      } else {
+        passages = testAssignments.map(item => item.passage);
+        methods = testAssignments.map(item => item.method);
+      }
       console.log('Assignments:', { passages, methods });
       
       // Ensure methods use standardized names
