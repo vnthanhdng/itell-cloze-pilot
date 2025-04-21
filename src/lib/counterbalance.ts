@@ -3,7 +3,7 @@ import { collection, getCountFromServer } from 'firebase/firestore';
 import { ClozeMethod, isValidMethod, convertToStandardMethod } from '../utils/methodMapping';
 
 // Define available passages and methods
-const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const AVAILABLE_PASSAGES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 const AVAILABLE_METHODS: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
 
 // Define all possible method rotations for balanced assignment
@@ -77,7 +77,6 @@ export const getRandomPassageSet = (seed?: number): number[] => {
  * Distribute the 3 methods across 6 tests with balanced allocation
  */
 export const distributeMethodsAcrossSixTests = (): ClozeMethod[] => {
-  const availableMethods: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
   
   // Create a balanced distribution (2-2-2 distribution)
   // For each method, allocate 2 tests
@@ -89,7 +88,7 @@ export const distributeMethodsAcrossSixTests = (): ClozeMethod[] => {
 
   // Build the method list
   const methods: ClozeMethod[] = [];
-  for (const method of availableMethods) {
+  for (const method of AVAILABLE_METHODS) {
     methods.push(...Array(methodCounts[method]).fill(method));
   }
   
