@@ -74,22 +74,29 @@ export const getRandomPassageSet = (seed?: number): number[] => {
 };
 
 export const distributeMethodsAcrossTenTests = (): ClozeMethod[] => {
-  const methods: ClozeMethod[] = [];
   const availableMethods: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
   
-  // Create a balanced distribution (approximately 3-3-4 distribution)
-  // For each method, allocate either 3 or 4 tests
-  const counts = [3, 3, 4]; 
+    // Create a balanced distribution (roughly 3-3-4) but rotate evenly
+    const baseCount = Math.floor(10 / availableMethods.length); // 3
+    const remainder = 10 % availableMethods.length; // 1
   
-  // Shuffle the methods to randomize which one gets 4 tests
-  const shuffledMethods = [...availableMethods].sort(() => Math.random() - 0.5);
+    const methodCounts: Record<ClozeMethod, number> = {
+      contextuality: baseCount,
+      contextuality_plus: baseCount,
+      keyword: baseCount,
+    };
   
-  // Allocate each method its designated number of tests
-  for (let i = 0; i < shuffledMethods.length; i++) {
-    for (let j = 0; j < counts[i]; j++) {
-      methods.push(shuffledMethods[i]);
+    // Distribute remainder to ensure rotation is fair across users
+    const methodOrder = [...availableMethods].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < remainder; i++) {
+      methodCounts[methodOrder[i]]++;
     }
-  }
+  
+    // Build the method list
+    const methods: ClozeMethod[] = [];
+    for (const method of availableMethods) {
+      methods.push(...Array(methodCounts[method]).fill(method));
+    }
   
   // Shuffle the final array to avoid obvious patterns
   return methods.sort(() => Math.random() - 0.5);
