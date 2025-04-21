@@ -35,16 +35,8 @@ export default function Registration({ onComplete }: RegistrationProps) {
       // Get passage and method assignments
       console.log('Getting test assignments...');
       const testAssignments = await assignUserTests();
-      let passages: number[] = [];
-      let methods: ClozeMethod[] = [];
-
-      if ('passages' in testAssignments && 'methods' in testAssignments) {
-        passages = testAssignments.passages;
-        methods = testAssignments.methods;
-      } else {
-        passages = testAssignments.map(item => item.passage);
-        methods = testAssignments.map(item => item.method);
-      }
+      const passages: number[] = testAssignments.passages;
+      const methods: ClozeMethod[] = testAssignments.methods;
       console.log('Assignments:', { passages, methods });
       
       // Ensure methods use standardized names

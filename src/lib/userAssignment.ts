@@ -34,7 +34,7 @@ export const assignContentToNewUser = async (userId: string) => {
     console.log(`Assigning content to new user ${userId} (user count: ${userCount})`);
     
     // Use the available assignUserTests function
-    const assignmentResult = await assignUserTests();
+    const assignmentResult = await assignUserTests() as { passages: number[]; methods: ClozeMethod[] } | { passage: number; method: ClozeMethod }[];
     let passages: number[] = [];
     let methods: ClozeMethod[] = [];
 
@@ -45,6 +45,8 @@ export const assignContentToNewUser = async (userId: string) => {
       passages = assignmentResult.map(item => item.passage);
       methods = assignmentResult.map(item => item.method);
     }
+    
+    console.log(`Assigned to user ${userId}:`, { passages, methods });
     
     // Save the assignment to the user document
     await setDoc(doc(db, "users", userId), {
@@ -90,10 +92,14 @@ export const getAssignmentDistribution = async () => {
       
       // If user has assigned methods, count the rotation
       if (user.assignedMethods && user.assignedMethods.length >= 3) {
-        const methodKey = user.assignedMethods.join('');
+        const methodKey = user.assignedMethods.slice(0, 3).join('');
         const rotationMap: {[key: string]: number} = {
-          'ABC': 0, 'ACB': 1, 'BAC': 2, 
-          'BCA': 3, 'CAB': 4, 'CBA': 5
+          'contextualitycontextuality_pluskeyword': 0,
+          'contextualitykeywordcontextuality_plus': 1,
+          'contextuality_pluscontextualitykeyword': 2,
+          'contextuality_pluskeywordcontextuality': 3,
+          'keywordcontextualitycontextuality_plus': 4,
+          'keywordcontextuality_pluscontextuality': 5
         };
         
         const rotationIndex = rotationMap[methodKey] !== undefined 
@@ -112,8 +118,8 @@ export const getAssignmentDistribution = async () => {
       // Add completion stats
       completion: {
         notStarted: users.filter(user => user.progress === 0).length,
-        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 10).length,
-        completed: users.filter(user => (user.progress ?? 0) >= 10).length
+        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 6).length,
+        completed: users.filter(user => (user.progress ?? 0) >= 6).length
       }
     };
   } catch (error) {
@@ -144,7 +150,7 @@ export const getOptimizedAssignment = async () => {
     const randomSeed = Math.floor(Math.random() * 1000);
     
     return {
-      seedValue: randomSeed, // Just a random seed value, not actually used
+      seedValue: randomSeed, // Random seed value for passage selection
       methodRotationIndex: minMethodRotationIndex
     };
   } catch (error) {
@@ -162,15 +168,15 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     // Get optimized assignment indices
     const { seedValue, methodRotationIndex } = await getOptimizedAssignment();
     
-    // Generate 10 passages using the seed value
-    const passages = getRandomPassageSet(seedValue).slice(0, 10);
+    // Generate 6 passages using the seed value
+    const passages = getRandomPassageSet(seedValue);
     
-    // Get a method rotation and distribute it across 10 tests
+    // Get a method rotation and distribute it across 6 tests
     const methodRotation = getMethodRotationByIndex(methodRotationIndex);
     const methods: ClozeMethod[] = [];
     
-    // Distribute methods from the rotation across 10 tests (approximately 3-3-4 distribution)
-    const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
+    // Distribute methods from the rotation across 6 tests (2-2-2 distribution)
+    const counts = [2, 2, 2]; // 2 + 2 + 2 = 6 total tests
     
     for (let i = 0; i < methodRotation.length; i++) {
       for (let j = 0; j < counts[i]; j++) {
@@ -180,6 +186,8 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     
     // Shuffle to avoid patterns
     methods.sort(() => Math.random() - 0.5);
+    
+    console.log(`Optimized assignment for user ${userId}:`, { passages, methods });
     
     // Save the assignment to the user document
     await updateUser(userId, {

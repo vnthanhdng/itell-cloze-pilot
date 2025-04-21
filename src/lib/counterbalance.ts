@@ -18,20 +18,20 @@ export const METHOD_ROTATIONS: ClozeMethod[][] = [
 ];
 
 /**
- * Randomly selects a combination of 3 passages and 3 methods
- * Ensures no duplicates in the selections
+ * Randomly selects a combination of passages and methods
+ * Ensures a balanced distribution of methods
  */
 export const getRandomCombination = () => {
-  // Shuffle available passages and pick 10 (instead of 3)
+  // Shuffle available passages and pick 6 (instead of 10)
   const shuffledPassages = [...AVAILABLE_PASSAGES].sort(() => Math.random() - 0.5);
-  const passages = shuffledPassages.slice(0, 10);
+  const passages = shuffledPassages.slice(0, 6);
   
-  // Distribute the 3 methods across 10 tests
-  const methods = distributeMethodsAcrossTenTests();
+  // Distribute the 3 methods across 6 tests
+  const methods = distributeMethodsAcrossSixTests();
   
   const combinations = passages.map((passage, index) => {
     return {passage, method: methods[index]};
-  })
+  });
   console.log("Assigned combinations:", combinations);
   
   return combinations;
@@ -70,33 +70,28 @@ export const getRandomPassageSet = (seed?: number): number[] => {
     shuffledPassages.sort(() => Math.random() - 0.5);
   }
   
-  return shuffledPassages.slice(0, 3);
+  return shuffledPassages.slice(0, 6); // Return 6 passages
 };
 
-export const distributeMethodsAcrossTenTests = (): ClozeMethod[] => {
+/**
+ * Distribute the 3 methods across 6 tests with balanced allocation
+ */
+export const distributeMethodsAcrossSixTests = (): ClozeMethod[] => {
   const availableMethods: ClozeMethod[] = ['contextuality', 'contextuality_plus', 'keyword'];
   
-    // Create a balanced distribution (roughly 3-3-4) but rotate evenly
-    const baseCount = Math.floor(10 / availableMethods.length); // 3
-    const remainder = 10 % availableMethods.length; // 1
-  
-    const methodCounts: Record<ClozeMethod, number> = {
-      contextuality: baseCount,
-      contextuality_plus: baseCount,
-      keyword: baseCount,
-    };
-  
-    // Distribute remainder to ensure rotation is fair across users
-    const methodOrder = [...availableMethods].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < remainder; i++) {
-      methodCounts[methodOrder[i]]++;
-    }
-  
-    // Build the method list
-    const methods: ClozeMethod[] = [];
-    for (const method of availableMethods) {
-      methods.push(...Array(methodCounts[method]).fill(method));
-    }
+  // Create a balanced distribution (2-2-2 distribution)
+  // For each method, allocate 2 tests
+  const methodCounts: Record<ClozeMethod, number> = {
+    contextuality: 2,
+    contextuality_plus: 2,
+    keyword: 2,
+  };
+
+  // Build the method list
+  const methods: ClozeMethod[] = [];
+  for (const method of availableMethods) {
+    methods.push(...Array(methodCounts[method]).fill(method));
+  }
   
   // Shuffle the final array to avoid obvious patterns
   return methods.sort(() => Math.random() - 0.5);
@@ -118,7 +113,11 @@ export const assignUserTests = async () => {
   } catch (error) {
     console.error('Error assigning user tests:', error);
     // Try one more time if there's an error
-    return getRandomCombination();
+    const combinations = getRandomCombination();
+    return { 
+      passages: combinations.map(c => c.passage), 
+      methods: combinations.map(c => c.method) 
+    };
   }
 };
 
@@ -126,7 +125,7 @@ export const assignUserTests = async () => {
  * Checks if a user has completed all tests
  */
 export const hasCompletedAllTests = (progress: number) => {
-  return progress >= 10; // 10 tests per user
+  return progress >= 6; // 6 tests per user
 };
 
 /**
@@ -165,6 +164,8 @@ export const getNextTest = (
   const passageId = passages[progress];
   const method = methods[progress];
   
+  console.log(`Getting test for progress ${progress}: Passage ${passageId}, Method ${method}`);
+  
   return {
     passageId,
     method
@@ -179,13 +180,13 @@ export const forceUserAssignment = async (
   customPassages: number[], 
   customMethods: string[]
 ) => {
-  if (!customPassages || customPassages.length !== 10) {
-    throw new Error(`Invalid passages: must provide exactly 10 passage IDs`);
+  if (!customPassages || customPassages.length !== 6) {
+    throw new Error(`Invalid passages: must provide exactly 6 passage IDs`);
   }
   
   // Validate methods
-  if (!customMethods || customMethods.length !== 3) {
-    throw new Error(`Invalid methods: must provide exactly 3 method names`);
+  if (!customMethods || customMethods.length !== 6) {
+    throw new Error(`Invalid methods: must provide exactly 6 method names`);
   }
   
   // Convert any legacy method codes to standardized names
@@ -215,14 +216,21 @@ export const forceUserAssignmentByIndices = async (
   // Get passages based on seed value
   const passages = getRandomPassageSet(passageSeed);
   
-  // Get methods based on rotation index
-  const methods = getMethodRotationByIndex(methodRotationIndex);
+  // Get methods based on rotation index and distribute across 6 tests
+  const methodRotation = getMethodRotationByIndex(methodRotationIndex);
+  const methods: ClozeMethod[] = [];
   
-  console.log(`Optimized assignment for user ${userId}:`, {
-    passages,
-    methods,
-    methodRotationIndex
-  });
+  // Distribute methods from the rotation across 6 tests (2-2-2 distribution)
+  const counts = [2, 2, 2]; // 2 + 2 + 2 = 6 total tests
+  
+  for (let i = 0; i < methodRotation.length; i++) {
+    for (let j = 0; j < counts[i]; j++) {
+      methods.push(methodRotation[i]);
+    }
+  }
+  
+  // Shuffle to avoid patterns
+  methods.sort(() => Math.random() - 0.5);
   
   await updateUser(userId, {
     assignedPassages: passages,

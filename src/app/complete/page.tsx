@@ -12,6 +12,7 @@ type MethodId = string;
 
 // Default methods to use if no test results are found
 const DEFAULT_METHODS = [
+  'contextuality', 'contextuality_plus', 'keyword',
   'contextuality', 'contextuality_plus', 'keyword'
 ];
 
@@ -51,7 +52,7 @@ export default function CompletePage() {
           // we can handle this in two ways:
           // 1. Show an error with a button to generate fake methods
           // 2. Automatically use default methods
-          if (userData.progress >= 10 && (!testResults || testResults.length === 0)) {
+          if (userData.progress >= 6 && (!testResults || testResults.length === 0)) {
             console.log('CompletePage - Progress indicates completion but no test results found');
             
             if (generateFakeMethods) {
@@ -81,16 +82,16 @@ export default function CompletePage() {
             setCompletedMethods(uniqueMethods);
             
             // Check if they've completed requirements
-            if (userData.progress < 10 || uniqueMethods.length < 3) {
+            if (userData.progress < 6 || uniqueMethods.length < 3) {
               setError(`You need to complete more tests before accessing the final survey. 
-                      Progress: ${userData.progress}/10, Methods completed: ${uniqueMethods.length}/3`);
+                      Progress: ${userData.progress}/6, Methods completed: ${uniqueMethods.length}/3`);
             } else {
               setShowSurvey(true);
             }
           } else {
             // No test results found, normal flow
             setError(`You need to complete the tests before accessing the final survey.
-                    Progress: ${userData.progress}/10, Methods completed: 0/3`);
+                    Progress: ${userData.progress}/6, Methods completed: 0/3`);
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
