@@ -95,7 +95,7 @@ export const getUserProgressStats = async (uid: string) => {
       throw new Error('User not found');
     }
     
-    const totalTests = 10; // We use 3 tests per user
+    const totalTests = 10; // We use 10 tests per user
     const completedTests = user.progress;
     const progressPercentage = (completedTests / totalTests) * 100;
     

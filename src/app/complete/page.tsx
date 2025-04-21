@@ -53,7 +53,7 @@ export default function CompletePage() {
           // we can handle this in two ways:
           // 1. Show an error with a button to generate fake methods
           // 2. Automatically use default methods
-          if (userData.progress >= 3 && (!testResults || testResults.length === 0)) {
+          if (userData.progress >= 10 && (!testResults || testResults.length === 0)) {
             console.log('CompletePage - Progress indicates completion but no test results found');
             
             if (generateFakeMethods) {

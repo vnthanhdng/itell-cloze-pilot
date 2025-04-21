@@ -29,9 +29,12 @@ export const getRandomCombination = () => {
   // Distribute the 3 methods across 10 tests
   const methods = distributeMethodsAcrossTenTests();
   
-  console.log(`Random combination: passages=${passages}, methods=${methods}`);
+  const combinations = passages.map((passage, index) => {
+    return {passage, method: methods[index]};
+  })
+  console.log("Assigned combinations:", combinations);
   
-  return { passages, methods };
+  return combinations;
 };
 
 /**
@@ -99,9 +102,11 @@ export const distributeMethodsAcrossTenTests = (): ClozeMethod[] => {
 export const assignUserTests = async () => {
   try {
     // Generate random combination
-    const { passages, methods } = getRandomCombination();
-    console.log(`Assigned: passages=${passages}, methods=${methods}`);
-    
+    const combinations = getRandomCombination();
+
+    const passages = combinations.map(c => c.passage);
+    const methods = combinations.map(c => c.method);
+
     return { passages, methods };
   } catch (error) {
     console.error('Error assigning user tests:', error);
@@ -114,7 +119,7 @@ export const assignUserTests = async () => {
  * Checks if a user has completed all tests
  */
 export const hasCompletedAllTests = (progress: number) => {
-  return progress >= 3; // 3 tests per user
+  return progress >= 10; // 10 tests per user
 };
 
 /**
@@ -128,7 +133,13 @@ export const getNextTest = (
   // Safety check: handle undefined or empty arrays with random assignment
   const { passages, methods } = (!assignedPassages || assignedPassages.length === 0 ||
     !assignedMethods || assignedMethods.length === 0) ? 
-    getRandomCombination() : 
+    (() => {
+      const combinations = getRandomCombination();
+      return {
+        passages: combinations.map(c => c.passage),
+        methods: combinations.map(c => c.method)
+      };
+    })() : 
     { 
       passages: assignedPassages, 
       // Convert any legacy method codes to standardized names
@@ -161,8 +172,8 @@ export const forceUserAssignment = async (
   customPassages: number[], 
   customMethods: string[]
 ) => {
-  if (!customPassages || customPassages.length !== 3) {
-    throw new Error(`Invalid passages: must provide exactly 3 passage IDs`);
+  if (!customPassages || customPassages.length !== 10) {
+    throw new Error(`Invalid passages: must provide exactly 10 passage IDs`);
   }
   
   // Validate methods

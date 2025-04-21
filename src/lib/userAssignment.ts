@@ -15,7 +15,7 @@ import { updateUser } from './firebase';
 // Define a type for the user data
 interface UserData {
   assignedPassages?: number[];
-  assignedMethods?: string[];
+  assignedMethods?: ClozeMethod[];
   progress?: number;
   [key: string]: any; // For any other fields that might be in the document
 }
@@ -34,7 +34,17 @@ export const assignContentToNewUser = async (userId: string) => {
     console.log(`Assigning content to new user ${userId} (user count: ${userCount})`);
     
     // Use the available assignUserTests function
-    const { passages, methods } = await assignUserTests();
+    const assignmentResult = await assignUserTests();
+    let passages: number[] = [];
+    let methods: ClozeMethod[] = [];
+
+    if ('passages' in assignmentResult && 'methods' in assignmentResult) {
+      passages = assignmentResult.passages;
+      methods = assignmentResult.methods;
+    } else {
+      passages = assignmentResult.map(item => item.passage);
+      methods = assignmentResult.map(item => item.method);
+    }
     
     // Save the assignment to the user document
     await setDoc(doc(db, "users", userId), {
@@ -102,8 +112,8 @@ export const getAssignmentDistribution = async () => {
       // Add completion stats
       completion: {
         notStarted: users.filter(user => user.progress === 0).length,
-        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 3).length,
-        completed: users.filter(user => (user.progress ?? 0) >= 3).length
+        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 10).length,
+        completed: users.filter(user => (user.progress ?? 0) >= 10).length
       }
     };
   } catch (error) {
@@ -186,7 +196,9 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     console.error('Error assigning optimized content:', error);
     
     // Fallback to simple assignment
-    const { passages, methods } = getRandomCombination();
+    const randomCombination = getRandomCombination();
+    const passages = randomCombination.map(item => item.passage);
+    const methods = randomCombination.map(item => item.method);
     
     await updateUser(userId, {
       assignedPassages: passages,
