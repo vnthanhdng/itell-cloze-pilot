@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
 import { getUser, getTestResults, updateUser } from '../../lib/firebase';
-import { hasCompletedEnoughAnnotations } from '../../lib/userProgress';
+import { getCurrentTest } from '../../lib/userProgress';
 
 export default function CompletePage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function CompletePage() {
   const [showThanks, setShowThanks] = useState(false);
   const [annotationCount, setAnnotationCount] = useState(0);
   const [testResultsNum, setTestResultsNum] = useState(0);
+  const [nextTest, setNextTest] = useState<{method: string, passageId: number} | null>(null);
 
   useEffect(() => {
     if (hasCheckedStatus) return;
@@ -35,7 +36,7 @@ export default function CompletePage() {
             return;
           }
           
-          // Get test results to count annotations
+          // Get test results to count
           const testResults = await getTestResults(user.uid);
           console.log('CompletePage - testResults:', testResults);
           setTestResultsNum(testResults.length);
@@ -64,11 +65,11 @@ export default function CompletePage() {
           console.log(`Total valid annotations: ${totalAnnotations}`);
           setAnnotationCount(totalAnnotations);
           
-          // Check if user has completed enough annotations
+          // Check if user has completed enough tests
           const completed = testResultsNum >= 6;
           
           if (completed) {
-            // User has completed at least 6 annotations, show thank you page
+            // User has completed at least 6 tests, show thank you page
             setShowThanks(true);
             
             // Mark the user as complete if not already done
@@ -76,9 +77,22 @@ export default function CompletePage() {
               await updateUser(user.uid, { endTime: new Date() });
             }
           } else {
-            // User hasn't completed enough annotations, show error
-            setError(`You need to complete more annotations before completing the study. 
-                    Current progress: ${testResultsNum}/6 annotations completed.`);
+            // User hasn't completed enough tests, show error
+            setError(`You need to complete more tests before completing the study. 
+                    Current progress: ${testResultsNum}/6 tests completed.`);
+                    
+            // Get the next test for the user
+            try {
+              const progress = await getCurrentTest(user.uid);
+              if (progress.currentTest) {
+                setNextTest({
+                  method: progress.currentTest.method,
+                  passageId: progress.currentTest.passageId
+                });
+              }
+            } catch (e) {
+              console.error("Error getting next test:", e);
+            }
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
@@ -98,9 +112,15 @@ export default function CompletePage() {
     return () => unsubscribe();
   }, [hasCheckedStatus, router]);
 
-  // Function to return to tests
+  // Function to return to tests - with improved routing
   const handleReturnToTests = () => {
-    router.push('/');
+    if (nextTest) {
+      // If we have the next test information, go directly to that test
+      router.push(`/test/${nextTest.method}/${nextTest.passageId}`);
+    } else {
+      // Otherwise, go to the router, which will determine the next test
+      router.push('/test');
+    }
   };
 
   if (loading) {
@@ -123,7 +143,7 @@ export default function CompletePage() {
               onClick={handleReturnToTests} 
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Return to Tests
+              {nextTest ? `Continue to Test ${nextTest.passageId}` : 'Return to Tests'}
             </button>
           </div>
         </div>
@@ -131,7 +151,7 @@ export default function CompletePage() {
     );
   }
 
-  // Thank you message (shown when user has completed 6+ annotations)
+  // Thank you message (shown when user has completed 6+ tests)
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-8 text-center">

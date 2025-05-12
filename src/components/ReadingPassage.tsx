@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ClozeTest from './ClozeTest';
 import { saveTestResult, auth, getTestResults } from '../lib/firebase';
 import ReactMarkdown from 'react-markdown';
+import { count } from 'console';
 
 interface ReadingPassageProps {
   passageId: number;
@@ -22,6 +23,7 @@ export default function ReadingPassage({
   const [timeLeft, setTimeLeft] = useState<number | null>(timeLimit || null);
   const [readingComplete, setReadingComplete] = useState<boolean>(false);
   const [totalAnnotations, setTotalAnnotations] = useState<number>(0);
+  const [testCount, setTestCount] = useState<number>(0);
 
 
   // Load the passage
@@ -47,6 +49,7 @@ export default function ReadingPassage({
       if (auth.currentUser) {
         try {
           const testResults = await getTestResults(auth.currentUser.uid);
+          setTestCount(testResults.length);
           const count = testResults.reduce((sum, result) => {
             return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
           }, 0);
@@ -152,8 +155,8 @@ export default function ReadingPassage({
       
       {/* Display the annotation progress */}
       <div className="bg-blue-50 p-3 mb-4 rounded-md">
-        <p>Annotations progress: <strong>{totalAnnotations}/6</strong></p>
-        {totalAnnotations >=6 && (
+        <p>Annotations progress: <strong>{testCount}/6</strong></p>
+        {testCount >=6 && (
           <p className="text-green-600 mt-1">You've reached the target number of annotations! After completing this test, you'll be marked as finished.</p>
         )}
       </div>

@@ -77,24 +77,16 @@ export const getCurrentTest = async (uid: string) => {
     }
     
     console.log(`Getting current test for user ${uid}. Progress: ${user.progress}`);
-    console.log(`User data: `, { 
-      assignedPassages: user.assignedPassages ? user.assignedPassages.length : 0,
-      assignedMethods: user.assignedMethods ? user.assignedMethods.length : 0
-    });
     
-    // Check if user has completed 6 annotations - this is the ONLY check that matters
+    // Get test results to check how many have been completed
     const testResults = await getTestResults(uid);
-    const totalAnnotations = testResults.reduce((sum, result) => {
-      const annotationCount = result.annotations ? Object.keys(result.annotations).length : 0;
-      console.log(`Test result: ${result.testId}, annotations: ${annotationCount}`);
-      return sum + annotationCount;
-    }, 0);
+    const completedTestsCount = testResults.length;
     
-    console.log(`User ${uid} has completed ${totalAnnotations} annotations total`);
+    console.log(`User has completed ${completedTestsCount} tests so far`);
     
-    // Check if all tests are completed by annotation count
-    if (testResults.length >= 6) {
-      console.log(`User ${uid} has completed at least 6 annotations. Marked as complete.`);
+    // Check if all tests are completed
+    if (completedTestsCount >= 6) {
+      console.log(`User ${uid} has completed 6 tests. Marked as complete.`);
       return { complete: true };
     }
     
@@ -119,6 +111,7 @@ export const getCurrentTest = async (uid: string) => {
     throw error;
   }
 };
+
 
 /**
  * Gets the overall progress statistics for a user
