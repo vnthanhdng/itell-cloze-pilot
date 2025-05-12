@@ -44,12 +44,12 @@ export const DebugInfo: React.FC<DebugInfoProps> = ({
       <div className="mb-2">
         <strong>Show Error Condition:</strong> {
           userData && userData.progress >= 1 && 
-          (userData.progress < 3 || completedMethods.length < 3) ? 'Yes' : 'No'
+          (userData.progress < 6 || completedMethods.length < 3) ? 'Yes' : 'No'
         }
       </div>
       <div className="mb-2">
         <strong>Show Survey Condition:</strong> {
-          userData && userData.progress >= 3 && 
+          userData && userData.progress >= 6 && 
           completedMethods.length >= 3 ? 'Yes' : 'No'
         }
       </div>

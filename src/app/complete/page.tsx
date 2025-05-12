@@ -49,7 +49,7 @@ export default function CompletePage() {
           const completed = await hasCompletedEnoughAnnotations(user.uid);
           
           if (completed) {
-            // User has completed at least 10 annotations, show thank you page
+            // User has completed at least 6 annotations, show thank you page
             setShowThanks(true);
             
             // Mark the user as complete if not already done
@@ -112,7 +112,7 @@ export default function CompletePage() {
     );
   }
 
-  // Thank you message (shown when user has completed 10+ annotations)
+  // Thank you message (shown when user has completed 6+ annotations)
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-8 text-center">

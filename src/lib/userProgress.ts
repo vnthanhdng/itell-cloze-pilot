@@ -25,11 +25,20 @@ export const advanceUserProgress = async (uid: string) => {
     
     console.log(`Updated progress for user ${uid} to ${newProgress}`);
     
-    // Check if all tests are completed
-    if (hasCompletedAllTests(newProgress)) {
+    // Check if user has completed 6 annotations
+    const testResults = await getTestResults(uid);
+    const totalAnnotations = testResults.reduce((sum, result) => {
+      // Count annotations from each test result
+      return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+    }, 0);
+    
+    console.log(`User ${uid} has completed ${totalAnnotations} annotations so far`);
+    
+    // If user has reached 6 annotations, mark as complete
+    if (totalAnnotations >= 6) {
       // Mark the completion time
       await updateUser(uid, { endTime: new Date() });
-      console.log(`User ${uid} has completed all tests!`);
+      console.log(`User ${uid} has completed at least 6 annotations!`);
       return { complete: true };
     }
     
@@ -73,13 +82,23 @@ export const getCurrentTest = async (uid: string) => {
       assignedMethods: user.assignedMethods ? user.assignedMethods.length : 0
     });
     
-    // Check if all tests are completed
-    if (hasCompletedAllTests(user.progress)) {
-      console.log(`User ${uid} has completed all tests.`);
+    // Check if user has completed 6 annotations - this is the ONLY check that matters
+    const testResults = await getTestResults(uid);
+    const totalAnnotations = testResults.reduce((sum, result) => {
+      const annotationCount = result.annotations ? Object.keys(result.annotations).length : 0;
+      console.log(`Test result: ${result.testId}, annotations: ${annotationCount}`);
+      return sum + annotationCount;
+    }, 0);
+    
+    console.log(`User ${uid} has completed ${totalAnnotations} annotations total`);
+    
+    // Check if all tests are completed by annotation count
+    if (totalAnnotations >= 6) {
+      console.log(`User ${uid} has completed at least 6 annotations. Marked as complete.`);
       return { complete: true };
     }
     
-    // Get the current test information
+    // If not complete, get the current test information
     const { passageId, method } = getNextTest(
       user.assignedPassages,
       user.assignedMethods,
@@ -140,13 +159,27 @@ export const hasCompletedAllTests = (progress: number) => {
 export const hasCompletedEnoughAnnotations = async (uid: string): Promise<boolean> => {
   try {
     const testResults = await getTestResults(uid);
+    
+    // Log to help with debugging
+    console.log(`Checking annotation count for user ${uid}`);
+    
+    // Count all annotations across all test results
     const totalAnnotations = testResults.reduce((sum, result) => {
-      return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+      const annotationCount = result.annotations ? Object.keys(result.annotations).length : 0;
+      console.log(`Test result ${result.testId}: ${annotationCount} annotations`);
+      return sum + annotationCount;
     }, 0);
     
-    return totalAnnotations >= 6;
+    console.log(`Total annotations for user ${uid}: ${totalAnnotations}`);
+    
+    // Check if they have at least 6 annotations
+    const hasEnough = totalAnnotations >= 6;
+    console.log(`User ${uid} has completed enough annotations: ${hasEnough}`);
+    
+    return hasEnough;
   } catch (error) {
     console.error('Error checking annotations:', error);
+    // Default to false if there's an error
     return false;
   }
 };
