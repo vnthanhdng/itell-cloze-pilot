@@ -40,9 +40,26 @@ export default function CompletePage() {
           
           // Calculate total annotations
           const totalAnnotations = testResults.reduce((sum, result) => {
-            return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+            // Check if annotations exists and is an object
+            if (!result.annotations || typeof result.annotations !== 'object') {
+              return sum;
+            }
+            
+            // Filter out any non-string entries that might cause counting errors
+            const validAnnotations = Object.entries(result.annotations)
+              .filter(([key, value]) => 
+                // Only count numeric keys with valid annotation values
+                /^\d+$/.test(key) && 
+                typeof value === 'string' && 
+                ['sentence', 'passage', 'source', 'unpredictable'].includes(value as string)
+              );
+            
+            console.log(`Test ${result.testId || 'unknown'}: Found ${validAnnotations.length} valid annotations`);
+            
+            return sum + validAnnotations.length;
           }, 0);
           
+          console.log(`Total valid annotations: ${totalAnnotations}`);
           setAnnotationCount(totalAnnotations);
           
           // Check if user has completed enough annotations
