@@ -15,6 +15,7 @@ export default function CompletePage() {
   const [userData, setUserData] = useState<any>(null);
   const [showThanks, setShowThanks] = useState(false);
   const [annotationCount, setAnnotationCount] = useState(0);
+  const [testResultsNum, setTestResultsNum] = useState(0);
 
   useEffect(() => {
     if (hasCheckedStatus) return;
@@ -37,6 +38,7 @@ export default function CompletePage() {
           // Get test results to count annotations
           const testResults = await getTestResults(user.uid);
           console.log('CompletePage - testResults:', testResults);
+          setTestResultsNum(testResults.length);
           
           // Calculate total annotations
           const totalAnnotations = testResults.reduce((sum, result) => {
@@ -147,7 +149,7 @@ export default function CompletePage() {
           </p>
           
           <p className="text-gray-600 mb-4">
-            You have completed {annotationCount} annotations.
+            You have completed {testResultsNum} tests.
           </p>
           
           <p className="text-gray-600">
