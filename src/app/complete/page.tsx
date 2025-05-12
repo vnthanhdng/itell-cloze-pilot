@@ -65,7 +65,7 @@ export default function CompletePage() {
           setAnnotationCount(totalAnnotations);
           
           // Check if user has completed enough annotations
-          const completed = await hasCompletedEnoughAnnotations(user.uid);
+          const completed = testResultsNum >= 6;
           
           if (completed) {
             // User has completed at least 6 annotations, show thank you page
