@@ -26,10 +26,10 @@ export const getRandomCombination = () => {
   // Shuffle available passages and pick 10 to allow for more tests if needed
   // (previously 6, now 10 to ensure users can reach 10 annotations)
   const shuffledPassages = [...AVAILABLE_PASSAGES].sort(() => Math.random() - 0.5);
-  const passages = shuffledPassages.slice(0, 10);
+  const passages = shuffledPassages.slice(0, 6);
   
   // Distribute the 3 methods across 10 tests
-  const methods = distributeMethodsAcrossTenTests();
+  const methods = distributeMethodsAcrossSixTests();
   
   const combinations = passages.map((passage, index) => {
     return {passage, method: methods[index]};
@@ -72,7 +72,7 @@ export const getRandomPassageSet = (seed?: number): number[] => {
     shuffledPassages.sort(() => Math.random() - 0.5);
   }
   
-  return shuffledPassages.slice(0, 10); // Return 10 passages (was 6)
+  return shuffledPassages.slice(0, 6); // Return 10 passages (was 6)
 };
 
 /**
@@ -154,7 +154,7 @@ export const hasCompletedEnoughAnnotations = async (uid: string): Promise<boolea
       return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
     }, 0);
     
-    return totalAnnotations >= 10;
+    return totalAnnotations >= 6;
   } catch (error) {
     console.error('Error checking annotations:', error);
     return false;
@@ -259,7 +259,7 @@ export const forceUserAssignmentByIndices = async (
   const methods: ClozeMethod[] = [];
   
   // Distribute methods for 10 tests (approximately 3-3-4 distribution)
-  const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
+  const counts = [2, 2, 2]; // 3 + 3 + 4 = 10 total tests
   
   for (let i = 0; i < methodRotation.length; i++) {
     for (let j = 0; j < counts[i]; j++) {

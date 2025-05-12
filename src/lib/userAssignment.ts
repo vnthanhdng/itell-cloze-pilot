@@ -138,8 +138,8 @@ export const getAssignmentDistribution = async () => {
       // Add completion stats based on annotations
       completion: {
         notStarted: users.filter(user => !userAnnotationCounts[user.id] || userAnnotationCounts[user.id] === 0).length,
-        inProgress: users.filter(user => userAnnotationCounts[user.id] > 0 && userAnnotationCounts[user.id] < 10).length,
-        completed: users.filter(user => userAnnotationCounts[user.id] >= 10).length
+        inProgress: users.filter(user => userAnnotationCounts[user.id] > 0 && userAnnotationCounts[user.id] < 6).length,
+        completed: users.filter(user => userAnnotationCounts[user.id] >= 6).length
       }
     };
   } catch (error) {
@@ -196,7 +196,7 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     const methods: ClozeMethod[] = [];
     
     // Distribute methods from the rotation across 10 tests (approximately 3-3-4 distribution)
-    const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
+    const counts = [2, 2, 2]; // 3 + 3 + 4 = 10 total tests
     
     for (let i = 0; i < methodRotation.length; i++) {
       for (let j = 0; j < counts[i]; j++) {

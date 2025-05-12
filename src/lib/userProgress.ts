@@ -112,7 +112,7 @@ export const getUserProgressStats = async (uid: string) => {
       throw new Error('User not found');
     }
     
-    const totalTests = 10; // We use 10 tests per user
+    const totalTests = 6; // We use 10 tests per user
     const completedTests = user.progress;
     const progressPercentage = (completedTests / totalTests) * 100;
     
@@ -134,7 +134,7 @@ export const getUserProgressStats = async (uid: string) => {
  * @returns boolean indicating if all tests are complete
  */
 export const hasCompletedAllTests = (progress: number) => {
-  return progress >= 10; // 10 tests per user
+  return progress >= 6; // 10 tests per user
 };
 
 export const hasCompletedEnoughAnnotations = async (uid: string): Promise<boolean> => {
@@ -144,7 +144,7 @@ export const hasCompletedEnoughAnnotations = async (uid: string): Promise<boolea
       return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
     }, 0);
     
-    return totalAnnotations >= 10;
+    return totalAnnotations >= 6;
   } catch (error) {
     console.error('Error checking annotations:', error);
     return false;

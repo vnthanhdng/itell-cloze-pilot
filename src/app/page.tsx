@@ -91,7 +91,7 @@ export default function HomePage() {
         <div className="space-y-4">
           <p>
             In this study, you will read passages and complete fill-in-the-blank tests.
-            You'll need to complete at least 10 annotations across various tests.
+            You'll need to complete at least 6 annotations across various tests.
           </p>
           <p>
             The entire study should take approximately 30-45 minutes to complete.
