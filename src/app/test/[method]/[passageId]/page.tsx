@@ -91,7 +91,7 @@ export default function TestPage({
       setStage(TestStage.COMPLETE);
       
       if (progress.complete) {
-        // All tests done, go to final survey
+        // All tests done, go to complete
         router.push('/complete');
       } else if (progress.nextTest) {
         // Go to the next test

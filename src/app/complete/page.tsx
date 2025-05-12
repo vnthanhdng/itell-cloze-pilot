@@ -4,27 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
-import { getUser, getTestResults, saveFinalSurvey, updateUser } from '../../lib/firebase';
-import FinalSurvey from '../../components/FinalSurvey';
-import { collection, getDocs, query, where, addDoc, serverTimestamp } from 'firebase/firestore';
-
-type MethodId = string;
-
-// Default methods to use if no test results are found
-const DEFAULT_METHODS = [
-  'contextuality', 'contextuality_plus', 'keyword',
-  'contextuality', 'contextuality_plus', 'keyword'
-];
+import { getUser, getTestResults, updateUser } from '../../lib/firebase';
+import { hasCompletedEnoughAnnotations } from '../../lib/userProgress';
 
 export default function CompletePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [showSurvey, setShowSurvey] = useState(false);
-  const [completedMethods, setCompletedMethods] = useState<MethodId[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [generateFakeMethods, setGenerateFakeMethods] = useState(false);
+  const [showThanks, setShowThanks] = useState(false);
+  const [annotationCount, setAnnotationCount] = useState(0);
 
   useEffect(() => {
     if (hasCheckedStatus) return;
@@ -44,54 +34,32 @@ export default function CompletePage() {
             return;
           }
           
-          // Get test results
+          // Get test results to count annotations
           const testResults = await getTestResults(user.uid);
           console.log('CompletePage - testResults:', testResults);
           
-          // SPECIAL CASE: If user has progress of 3 or more but no test results,
-          // we can handle this in two ways:
-          // 1. Show an error with a button to generate fake methods
-          // 2. Automatically use default methods
-          if (userData.progress >= 6 && (!testResults || testResults.length === 0)) {
-            console.log('CompletePage - Progress indicates completion but no test results found');
-            
-            if (generateFakeMethods) {
-              // Use default methods if user clicked the button to generate them
-              setCompletedMethods(DEFAULT_METHODS);
-              setShowSurvey(true);
-            } else {
-              // Show error with option to generate methods
-              setError(`Your progress indicates you've completed all tests, but no test results were found. 
-                      This might be due to a data storage issue. You can either return to complete the tests 
-                      again or continue to the survey with default options.`);
-            }
-            
-            setLoading(false);
-            setHasCheckedStatus(true);
-            return;
-          }
+          // Calculate total annotations
+          const totalAnnotations = testResults.reduce((sum, result) => {
+            return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+          }, 0);
           
-          // Normal case - extract methods from test results
-          if (testResults && testResults.length > 0) {
-            const methods = testResults.map(result => {
-              return result.method || null;
-            }).filter(Boolean); // Remove null values
+          setAnnotationCount(totalAnnotations);
+          
+          // Check if user has completed enough annotations
+          const completed = await hasCompletedEnoughAnnotations(user.uid);
+          
+          if (completed) {
+            // User has completed at least 10 annotations, show thank you page
+            setShowThanks(true);
             
-            // Remove duplicates
-            const uniqueMethods = [...new Set(methods.filter((method): method is string => method !== null))];
-            setCompletedMethods(uniqueMethods);
-            
-            // Check if they've completed requirements
-            if (userData.progress < 6 || uniqueMethods.length < 3) {
-              setError(`You need to complete more tests before accessing the final survey. 
-                      Progress: ${userData.progress}/6, Methods completed: ${uniqueMethods.length}/3`);
-            } else {
-              setShowSurvey(true);
+            // Mark the user as complete if not already done
+            if (!userData.endTime) {
+              await updateUser(user.uid, { endTime: new Date() });
             }
           } else {
-            // No test results found, normal flow
-            setError(`You need to complete the tests before accessing the final survey.
-                    Progress: ${userData.progress}/6, Methods completed: 0/3`);
+            // User hasn't completed enough annotations, show error
+            setError(`You need to complete more annotations before completing the study. 
+                    Current progress: ${totalAnnotations}/10 annotations completed.`);
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
@@ -109,42 +77,7 @@ export default function CompletePage() {
     });
 
     return () => unsubscribe();
-  }, [hasCheckedStatus, generateFakeMethods, router]);
-
-  const handleSurveyComplete = async (results: {
-    methodRanking: MethodId[];
-    mostEngaging: MethodId;
-    mostHelpful: MethodId;
-    feedback?: string;
-  }) => {
-    const user = auth.currentUser;
-    if (!user) {
-      router.push('/');
-      return;
-    }
-
-    try {
-      console.log('CompletePage - Saving survey results:', results);
-      
-      // Save the final survey
-      await saveFinalSurvey({
-        userId: user.uid,
-        ...results
-      });
-
-      // Show thank you message
-      setShowSurvey(false);
-    } catch (err) {
-      console.error('Error saving final survey:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Failed to save your survey responses: ${errorMessage}`);
-    }
-  };
-
-  // Function to "repair" the test data by generating fake records
-  const handleRepairData = async () => {
-    setGenerateFakeMethods(true);
-  };
+  }, [hasCheckedStatus, router]);
 
   // Function to return to tests
   const handleReturnToTests = () => {
@@ -173,26 +106,13 @@ export default function CompletePage() {
             >
               Return to Tests
             </button>
-            
-            {userData && userData.progress >= 3 && (
-              <button 
-                onClick={handleRepairData} 
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Continue to Survey Anyway
-              </button>
-            )}
           </div>
         </div>
       </div>
     );
   }
 
-  if (showSurvey) {
-    return <FinalSurvey completedMethods={completedMethods} onComplete={handleSurveyComplete} />;
-  }
-
-  // Thank you message after survey completion
+  // Thank you message (shown when user has completed 10+ annotations)
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -207,6 +127,10 @@ export default function CompletePage() {
           
           <p className="text-lg text-gray-700 mb-4">
             Your participation in this study is complete.
+          </p>
+          
+          <p className="text-gray-600 mb-4">
+            You have completed {annotationCount} annotations.
           </p>
           
           <p className="text-gray-600">

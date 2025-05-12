@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { getUser } from '../lib/firebase';
-import { getCurrentTest } from '../lib/userProgress';
+import { getUser, getTestResults } from '../lib/firebase';
+import { getCurrentTest, hasCompletedEnoughAnnotations } from '../lib/userProgress';
 import Registration from '../components/Registration';
 
 export default function HomePage() {
@@ -25,14 +25,20 @@ export default function HomePage() {
             return;
           }
           
-          const progress = await getCurrentTest(user.uid);
+          // Check if user has completed enough annotations
+          const hasCompleted = await hasCompletedEnoughAnnotations(user.uid);
           
-          if (progress.complete) {
-            // User has completed all tests
+          if (hasCompleted) {
+            // User has completed 10+ annotations
             router.push('/complete');
-          } else if (progress.currentTest) {
-            // Redirect to current test with standardized method name
-            router.push(`/test/${progress.currentTest.method}/${progress.currentTest.passageId}`);
+          } else {
+            // Get the next test
+            const progress = await getCurrentTest(user.uid);
+            
+            if (progress.currentTest) {
+              // Redirect to current test with standardized method name
+              router.push(`/test/${progress.currentTest.method}/${progress.currentTest.passageId}`);
+            }
           }
         } catch (err) {
           console.error('Error checking user progress:', err);
@@ -84,8 +90,8 @@ export default function HomePage() {
         <h2 className="text-xl font-semibold mb-4">Study Information</h2>
         <div className="space-y-4">
           <p>
-            In this study, you will read four short passages and complete a different type of fill-in-the-blank test for each one.
-            After each test, you'll provide feedback on your experience.
+            In this study, you will read passages and complete fill-in-the-blank tests.
+            You'll need to complete at least 10 annotations across various tests.
           </p>
           <p>
             The entire study should take approximately 30-45 minutes to complete.

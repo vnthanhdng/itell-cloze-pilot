@@ -1,8 +1,7 @@
-// src/components/ReadingPassage.tsx
 
 import React, { useState, useEffect } from 'react';
 import ClozeTest from './ClozeTest';
-import { saveTestResult, auth } from '../lib/firebase';
+import { saveTestResult, auth, getTestResults } from '../lib/firebase';
 import ReactMarkdown from 'react-markdown';
 
 interface ReadingPassageProps {
@@ -22,6 +21,7 @@ export default function ReadingPassage({
   const [loading, setLoading] = useState<boolean>(true);
   const [timeLeft, setTimeLeft] = useState<number | null>(timeLimit || null);
   const [readingComplete, setReadingComplete] = useState<boolean>(false);
+  const [totalAnnotations, setTotalAnnotations] = useState<number>(0);
 
 
   // Load the passage
@@ -41,6 +41,25 @@ export default function ReadingPassage({
     };
 
     loadPassage();
+    
+    // Also check the user's current annotation count
+    const checkAnnotationCount = async () => {
+      if (auth.currentUser) {
+        try {
+          const testResults = await getTestResults(auth.currentUser.uid);
+          const count = testResults.reduce((sum, result) => {
+            return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+          }, 0);
+          setTotalAnnotations(count);
+          console.log(`Current annotation count: ${count}`);
+        } catch (error) {
+          console.error('Error checking annotation count:', error);
+        }
+      }
+    };
+    
+    checkAnnotationCount();
+    
   }, [method, passageId]);
 
   // Timer functionality
@@ -67,7 +86,6 @@ export default function ReadingPassage({
 
   const handleReadingComplete = () => {
     setReadingComplete(true);
-  
   };
 
   
@@ -89,6 +107,10 @@ export default function ReadingPassage({
     const userId = auth.currentUser.uid;
     console.log("Test complete with results:", results);
     
+    // Calculate how many annotations were just added
+    const newAnnotationCount = Object.keys(results.annotations).length;
+    const updatedTotalAnnotations = totalAnnotations + newAnnotationCount;
+    
     saveTestResult({
       userId,
       method,
@@ -101,6 +123,12 @@ export default function ReadingPassage({
       holisticScore: results.holisticScore
     }).then(() => {
       console.log("Test result saved successfully");
+      console.log(`Total annotations after this test: ${updatedTotalAnnotations}`);
+      
+      // Update the local state
+      setTotalAnnotations(updatedTotalAnnotations);
+      
+      // Continue to next test
       onComplete();
     }).catch(error => {
       console.error("Error saving test result:", error);
@@ -121,6 +149,14 @@ export default function ReadingPassage({
           <span className="font-mono text-lg">{formatTime(timeLeft)}</span>
         </div>
       )}
+      
+      {/* Display the annotation progress */}
+      <div className="bg-blue-50 p-3 mb-4 rounded-md">
+        <p>Annotations progress: <strong>{totalAnnotations}/6</strong></p>
+        {totalAnnotations >=6 && (
+          <p className="text-green-600 mt-1">You've reached the target number of annotations! After completing this test, you'll be marked as finished.</p>
+        )}
+      </div>
 
       <div className="prose prose-lg max-w-none">
         <div>

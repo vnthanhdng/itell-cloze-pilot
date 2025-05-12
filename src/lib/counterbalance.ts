@@ -1,4 +1,4 @@
-import { getUser, updateUser, db } from './firebase';
+import { getUser, updateUser, db, getTestResults } from './firebase';
 import { collection, getCountFromServer } from 'firebase/firestore';
 import { ClozeMethod, isValidMethod, convertToStandardMethod } from '../utils/methodMapping';
 
@@ -20,14 +20,16 @@ export const METHOD_ROTATIONS: ClozeMethod[][] = [
 /**
  * Randomly selects a combination of passages and methods
  * Ensures a balanced distribution of methods
+ * Now allocating up to 10 tests to get enough annotations
  */
 export const getRandomCombination = () => {
-  // Shuffle available passages and pick 6 (instead of 10)
+  // Shuffle available passages and pick 10 to allow for more tests if needed
+  // (previously 6, now 10 to ensure users can reach 10 annotations)
   const shuffledPassages = [...AVAILABLE_PASSAGES].sort(() => Math.random() - 0.5);
-  const passages = shuffledPassages.slice(0, 6);
+  const passages = shuffledPassages.slice(0, 10);
   
-  // Distribute the 3 methods across 6 tests
-  const methods = distributeMethodsAcrossSixTests();
+  // Distribute the 3 methods across 10 tests
+  const methods = distributeMethodsAcrossTenTests();
   
   const combinations = passages.map((passage, index) => {
     return {passage, method: methods[index]};
@@ -70,14 +72,34 @@ export const getRandomPassageSet = (seed?: number): number[] => {
     shuffledPassages.sort(() => Math.random() - 0.5);
   }
   
-  return shuffledPassages.slice(0, 6); // Return 6 passages
+  return shuffledPassages.slice(0, 10); // Return 10 passages (was 6)
 };
 
 /**
- * Distribute the 3 methods across 6 tests with balanced allocation
+ * Distribute the 3 methods across 10 tests with balanced allocation
+ */
+export const distributeMethodsAcrossTenTests = (): ClozeMethod[] => {
+  // Create a balanced distribution for 10 tests (approximately 3-3-4)
+  const methodCounts: Record<ClozeMethod, number> = {
+    contextuality: 3,
+    contextuality_plus: 3,
+    keyword: 4,
+  };
+
+  // Build the method list
+  const methods: ClozeMethod[] = [];
+  for (const method of AVAILABLE_METHODS) {
+    methods.push(...Array(methodCounts[method]).fill(method));
+  }
+  
+  // Shuffle the final array to avoid obvious patterns
+  return methods.sort(() => Math.random() - 0.5);
+};
+
+/**
+ * Previous distribution method for 6 tests (kept for backward compatibility)
  */
 export const distributeMethodsAcrossSixTests = (): ClozeMethod[] => {
-  
   // Create a balanced distribution (2-2-2 distribution)
   // For each method, allocate 2 tests
   const methodCounts: Record<ClozeMethod, number> = {
@@ -121,10 +143,22 @@ export const assignUserTests = async () => {
 };
 
 /**
- * Checks if a user has completed all tests
+ * Check if user has completed enough annotations
+ * @param uid User ID
+ * @returns boolean indicating if the user has 10+ annotations
  */
-export const hasCompletedAllTests = (progress: number) => {
-  return progress >= 6; // 6 tests per user
+export const hasCompletedEnoughAnnotations = async (uid: string): Promise<boolean> => {
+  try {
+    const testResults = await getTestResults(uid);
+    const totalAnnotations = testResults.reduce((sum, result) => {
+      return sum + (result.annotations ? Object.keys(result.annotations).length : 0);
+    }, 0);
+    
+    return totalAnnotations >= 10;
+  } catch (error) {
+    console.error('Error checking annotations:', error);
+    return false;
+  }
 };
 
 /**
@@ -179,13 +213,18 @@ export const forceUserAssignment = async (
   customPassages: number[], 
   customMethods: string[]
 ) => {
-  if (!customPassages || customPassages.length !== 6) {
-    throw new Error(`Invalid passages: must provide exactly 6 passage IDs`);
+  if (!customPassages || customPassages.length < 1) {
+    throw new Error(`Invalid passages: must provide at least 1 passage ID`);
   }
   
   // Validate methods
-  if (!customMethods || customMethods.length !== 6) {
-    throw new Error(`Invalid methods: must provide exactly 6 method names`);
+  if (!customMethods || customMethods.length < 1) {
+    throw new Error(`Invalid methods: must provide at least 1 method name`);
+  }
+  
+  // Ensure arrays are the same length
+  if (customPassages.length !== customMethods.length) {
+    throw new Error(`Passages and methods must have the same length`);
   }
   
   // Convert any legacy method codes to standardized names
@@ -212,15 +251,15 @@ export const forceUserAssignmentByIndices = async (
   passageSeed: number,
   methodRotationIndex: number
 ) => {
-  // Get passages based on seed value
+  // Get passages based on seed value - use 10 passages instead of 6
   const passages = getRandomPassageSet(passageSeed);
   
-  // Get methods based on rotation index and distribute across 6 tests
+  // Get methods based on rotation index and distribute across tests
   const methodRotation = getMethodRotationByIndex(methodRotationIndex);
   const methods: ClozeMethod[] = [];
   
-  // Distribute methods from the rotation across 6 tests (2-2-2 distribution)
-  const counts = [2, 2, 2]; // 2 + 2 + 2 = 6 total tests
+  // Distribute methods for 10 tests (approximately 3-3-4 distribution)
+  const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
   
   for (let i = 0; i < methodRotation.length; i++) {
     for (let j = 0; j < counts[i]; j++) {

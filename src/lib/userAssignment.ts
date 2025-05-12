@@ -1,5 +1,5 @@
 import { collection, getCountFromServer, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, getTestResults } from './firebase';
 import { 
   assignUserTests, 
   forceUserAssignment, 
@@ -76,11 +76,31 @@ export const getAssignmentDistribution = async () => {
       ...doc.data() 
     })) as (UserData & { id: string })[];
     
+    // Get test results for annotation counting
+    const testResultsRef = collection(db, 'testResults');
+    const testResultsSnapshot = await getDocs(testResultsRef);
+    const testResults = testResultsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
     // For passages, track which ones are used most frequently
     const passageCounts: Record<number, number> = {};
     // Initialize counters for method rotations
     const methodRotations = Array(METHOD_ROTATIONS.length).fill(0);
     const combinations = {};
+    
+    // Track annotation counts for completion status
+    const userAnnotationCounts: Record<string, number> = {};
+    
+    // Count annotations for each user
+    testResults.forEach(result => {
+      const userId = (result as { id: string; userId: string }).userId;
+      const annotations = (result as { id: string; userId: string; annotations?: Record<string, any> }).annotations || {};
+      const annotationCount = Object.keys(annotations).length;
+      
+      userAnnotationCounts[userId] = (userAnnotationCounts[userId] || 0) + annotationCount;
+    });
     
     users.forEach(user => {
       // If user has assigned passages, count individual passages for distribution analysis
@@ -115,11 +135,11 @@ export const getAssignmentDistribution = async () => {
       passageCounts, // Individual passage distribution
       methodRotations,
       combinations,
-      // Add completion stats
+      // Add completion stats based on annotations
       completion: {
-        notStarted: users.filter(user => user.progress === 0).length,
-        inProgress: users.filter(user => (user.progress ?? 0) > 0 && (user.progress ?? 0) < 6).length,
-        completed: users.filter(user => (user.progress ?? 0) >= 6).length
+        notStarted: users.filter(user => !userAnnotationCounts[user.id] || userAnnotationCounts[user.id] === 0).length,
+        inProgress: users.filter(user => userAnnotationCounts[user.id] > 0 && userAnnotationCounts[user.id] < 10).length,
+        completed: users.filter(user => userAnnotationCounts[user.id] >= 10).length
       }
     };
   } catch (error) {
@@ -168,15 +188,15 @@ export const assignOptimizedContentToUser = async (userId: string) => {
     // Get optimized assignment indices
     const { seedValue, methodRotationIndex } = await getOptimizedAssignment();
     
-    // Generate 6 passages using the seed value
+    // Generate 10 passages using the seed value (increased from 6)
     const passages = getRandomPassageSet(seedValue);
     
-    // Get a method rotation and distribute it across 6 tests
+    // Get a method rotation and distribute it across tests
     const methodRotation = getMethodRotationByIndex(methodRotationIndex);
     const methods: ClozeMethod[] = [];
     
-    // Distribute methods from the rotation across 6 tests (2-2-2 distribution)
-    const counts = [2, 2, 2]; // 2 + 2 + 2 = 6 total tests
+    // Distribute methods from the rotation across 10 tests (approximately 3-3-4 distribution)
+    const counts = [3, 3, 4]; // 3 + 3 + 4 = 10 total tests
     
     for (let i = 0; i < methodRotation.length; i++) {
       for (let j = 0; j < counts[i]; j++) {
