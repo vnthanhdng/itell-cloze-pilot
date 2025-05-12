@@ -35,7 +35,7 @@ export const advanceUserProgress = async (uid: string) => {
     console.log(`User ${uid} has completed ${totalAnnotations} annotations so far`);
     
     // If user has reached 6 annotations, mark as complete
-    if (totalAnnotations >= 6) {
+    if (testResults.length >= 6) {
       // Mark the completion time
       await updateUser(uid, { endTime: new Date() });
       console.log(`User ${uid} has completed at least 6 annotations!`);
@@ -93,7 +93,7 @@ export const getCurrentTest = async (uid: string) => {
     console.log(`User ${uid} has completed ${totalAnnotations} annotations total`);
     
     // Check if all tests are completed by annotation count
-    if (totalAnnotations >= 6) {
+    if (testResults.length >= 6) {
       console.log(`User ${uid} has completed at least 6 annotations. Marked as complete.`);
       return { complete: true };
     }

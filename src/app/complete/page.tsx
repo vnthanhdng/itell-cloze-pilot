@@ -78,7 +78,7 @@ export default function CompletePage() {
           } else {
             // User hasn't completed enough annotations, show error
             setError(`You need to complete more annotations before completing the study. 
-                    Current progress: ${totalAnnotations}/6 annotations completed.`);
+                    Current progress: ${testResultsNum}/6 annotations completed.`);
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
