@@ -123,7 +123,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "scripts/export-firebase.js"  ],
+, "scripts/export-firestore.js"  ],
   "exclude": [
     "node_modules"
   ]

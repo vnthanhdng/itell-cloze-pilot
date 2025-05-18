@@ -9,6 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "extract-passages": "ts-node scripts/extract-passages.ts",
+    "export-firestore": "ts-node scripts/export-firestore.js",
+    "progress-report": "ts-node scripts/user-progress-report.js",
+    "generate-report": "ts-node scripts/user-progress-report.js && ts-node scripts/export-firestore.js",
     "export": "next export",
   "deploy": "next build && next export && firebase deploy"
   },
