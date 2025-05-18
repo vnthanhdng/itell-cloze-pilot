@@ -3,128 +3,92 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../../lib/firebase';
-import { getUser, getTestResults, updateUser } from '../../lib/firebase';
-import { getCurrentTest } from '../../lib/userProgress';
+import { auth } from '../../lib/firebase';
+import { getUser, getTestResults, updateUser,  } from '../../lib/firebase';
+import { getCurrentTest } from '@/src/lib/userProgress';
 
 export default function CompletePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-  const [showThanks, setShowThanks] = useState(false);
-  const [annotationCount, setAnnotationCount] = useState(0);
   const [testResultsNum, setTestResultsNum] = useState(0);
   const [nextTest, setNextTest] = useState<{method: string, passageId: number} | null>(null);
 
   useEffect(() => {
-    if (hasCheckedStatus) return;
-    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           // Get user data
           const userData = await getUser(user.uid);
-          console.log('CompletePage - userData:', userData);
-          setUserData(userData);
           
           if (!userData) {
-            console.log('CompletePage - No user data found');
+            setError('User account not found. Please register first.');
             setLoading(false);
-            setHasCheckedStatus(true);
             return;
           }
           
-          // Get test results to count
+          // Get test results to count - IMPORTANT: Use the direct count value, not state
           const testResults = await getTestResults(user.uid);
+          const actualTestCount = testResults.length;
+          console.log(`Direct test count: ${actualTestCount}, User ID: ${user.uid}`);
+          
+          // Set state (but don't rely on it immediately)
+          setTestResultsNum(actualTestCount);
+          
+          // Also get the user's current test status
           const progress = await getCurrentTest(user.uid);
-          console.log('CompletePage - testResults:', testResults);
-          setTestResultsNum(testResults.length);
+          console.log("Progress object:", progress);
+          console.log(`Progress complete flag: ${progress.complete}, Actual test count: ${actualTestCount}`);
           
-          // Calculate total annotations
-          const totalAnnotations = testResults.reduce((sum, result) => {
-            // Check if annotations exists and is an object
-            if (!result.annotations || typeof result.annotations !== 'object') {
-              return sum;
-            }
-            
-            // Filter out any non-string entries that might cause counting errors
-            const validAnnotations = Object.entries(result.annotations)
-              .filter(([key, value]) => 
-                // Only count numeric keys with valid annotation values
-                /^\d+$/.test(key) && 
-                typeof value === 'string' && 
-                ['sentence', 'passage', 'source', 'unpredictable'].includes(value as string)
-              );
-            
-            console.log(`Test ${result.testId || 'unknown'}: Found ${validAnnotations.length} valid annotations`);
-            
-            return sum + validAnnotations.length;
-          }, 0);
-          
-          console.log(`Total valid annotations: ${totalAnnotations}`);
-          setAnnotationCount(totalAnnotations);
-          
-          // Check if user has completed enough tests
-          const completed = testResultsNum >= 6;
-          
-          if (completed) {
-            // User has completed at least 6 tests, show thank you page
-            setShowThanks(true);
+          // CRITICAL: Use the direct count from testResults.length, not the state variable
+          // This fixes the timing issue where state hasn't updated yet
+          if (actualTestCount >= 6) {
+            console.log(`User has completed ${actualTestCount} tests, showing Thank You page`);
             
             // Mark the user as complete if not already done
             if (!userData.endTime) {
               await updateUser(user.uid, { endTime: new Date() });
             }
+            
+            // Show the thank you page
+            setLoading(false);
           } else {
-            // User hasn't completed enough tests, show error
-            console.log(testResultsNum);
-            console.log(testResults.length);
-            console.log(progress);
-            console.log(progress.complete);
-
-            setError(`You need to complete more tests before completing the study. 
-                    Current progress: ${testResultsNum}/6 tests completed.`);
-                    
-            // Get the next test for the user
-            try {
-              const progress = await getCurrentTest(user.uid);
-              if (progress.currentTest) {
-                setNextTest({
-                  method: progress.currentTest.method,
-                  passageId: progress.currentTest.passageId
-                });
-              }
-            } catch (e) {
-              console.error("Error getting next test:", e);
+            console.log(`User has only completed ${actualTestCount} tests, needs ${6-actualTestCount} more`);
+            
+            // Not enough tests completed - redirect to next test
+            if (progress.currentTest) {
+              const nextTestUrl = `/test/${progress.currentTest.method}/${progress.currentTest.passageId}`;
+              console.log(`Redirecting to next test: ${nextTestUrl}`);
+              router.push(nextTestUrl);
+            } else {
+              setError('Failed to determine which test you should take next. Please contact support.');
+              setLoading(false);
             }
           }
         } catch (err) {
           console.error('Error checking completion status:', err);
           const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
           setError(`Error retrieving your data: ${errorMessage}`);
-        } finally {
           setLoading(false);
-          setHasCheckedStatus(true);
         }
       } else {
         // Not logged in
-        console.log('CompletePage - Not logged in, redirecting');
         router.push('/');
       }
     });
 
     return () => unsubscribe();
-  }, [hasCheckedStatus, router]);
+  }, [router]);
 
   // Function to return to tests - with improved routing
   const handleReturnToTests = () => {
     if (nextTest) {
       // If we have the next test information, go directly to that test
+      console.log(`Redirecting to next test: /test/${nextTest.method}/${nextTest.passageId}`);
       router.push(`/test/${nextTest.method}/${nextTest.passageId}`);
     } else {
       // Otherwise, go to the router, which will determine the next test
+      console.log('Redirecting to test router');
       router.push('/test');
     }
   };
@@ -200,3 +164,4 @@ export default function CompletePage() {
     </div>
   );
 }
+
