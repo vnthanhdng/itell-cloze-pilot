@@ -25,16 +25,13 @@ export default function HomePage() {
             return;
           }
           
-          // Check if user has completed enough annotations
-          const hasCompleted = await hasCompletedEnoughAnnotations(user.uid);
+          const progress = await getCurrentTest(user.uid);
           
-          if (hasCompleted) {
+          if (progress.complete) {
             // User has completed 10+ annotations
             router.push('/complete');
           } else {
             // Get the next test
-            const progress = await getCurrentTest(user.uid);
-            
             if (progress.currentTest) {
               // Redirect to current test with standardized method name
               router.push(`/test/${progress.currentTest.method}/${progress.currentTest.passageId}`);
