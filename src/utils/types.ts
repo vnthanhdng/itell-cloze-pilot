@@ -5,7 +5,7 @@ export interface User {
   demographics: Demographics;
   assignedPassages: number[]; // [1, 6, 11] for example
   assignedMethods: string[]; // ['contextuality', 'contextuality_plus', 'keyword']
-  progress: number; // from 0 to 3
+  progress: number; // from 0 to 5
   startTime: Date;
   endTime?: Date;
 

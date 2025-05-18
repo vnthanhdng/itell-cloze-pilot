@@ -38,6 +38,7 @@ export default function CompletePage() {
           
           // Get test results to count
           const testResults = await getTestResults(user.uid);
+          const progress = await getCurrentTest(user.uid);
           console.log('CompletePage - testResults:', testResults);
           setTestResultsNum(testResults.length);
           
@@ -78,6 +79,11 @@ export default function CompletePage() {
             }
           } else {
             // User hasn't completed enough tests, show error
+            console.log(testResultsNum);
+            console.log(testResults.length);
+            console.log(progress);
+            console.log(progress.complete);
+
             setError(`You need to complete more tests before completing the study. 
                     Current progress: ${testResultsNum}/6 tests completed.`);
                     
